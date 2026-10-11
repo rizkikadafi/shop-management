@@ -5,7 +5,6 @@ import { Button, Grid, Layout, Space, Typography, theme } from "antd";
 import { useI18n } from "../i18n/useI18n";
 import { AccountButton } from "./AccountButton";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { SyncStatus } from "./SyncStatus";
 
 const { Header } = Layout;
 
@@ -38,7 +37,11 @@ export function AppHeader() {
         height: 64,
       }}
     >
-      <Space size="middle" align="center">
+      <Space
+        size="middle"
+        align="center"
+        style={{ minWidth: 0, overflow: "hidden" }}
+      >
         <Button
           type="text"
           aria-label={t("common.toggleSidebar")}
@@ -48,18 +51,22 @@ export function AppHeader() {
         {isMobile && (
           <Typography.Text
             strong
+            ellipsis
             style={{
               color: token.colorPrimary,
               fontSize: 16,
-              whiteSpace: "nowrap",
+              minWidth: 0,
             }}
           >
             {t("auth.brand")}
           </Typography.Text>
         )}
       </Space>
-      <Space size="middle" align="center">
-        <SyncStatus />
+      <Space
+        size="middle"
+        align="center"
+        style={{ minWidth: 0, overflow: "hidden" }}
+      >
         <LanguageSwitcher />
         {!isMobile && <AccountButton />}
       </Space>

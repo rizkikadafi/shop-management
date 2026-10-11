@@ -9,15 +9,18 @@ export function AppTitle({ collapsed }: TitleProps) {
   const { token } = theme.useToken();
 
   return (
-    <Space size={8} align="center" style={{ overflow: "hidden" }}>
-      <ShopOutlined style={{ fontSize: 20, color: token.colorPrimary }} />
+    <Space size={8} align="center" style={{ minWidth: 0, overflow: "hidden" }}>
+      <ShopOutlined
+        style={{ fontSize: 20, color: token.colorPrimary, flexShrink: 0 }}
+      />
       {!collapsed && (
         <Typography.Text
           strong
+          ellipsis
           style={{
             fontSize: 16,
             color: token.colorPrimary,
-            whiteSpace: "nowrap",
+            minWidth: 0,
           }}
         >
           {t("auth.brand")}

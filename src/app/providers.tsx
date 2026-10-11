@@ -34,26 +34,39 @@ function RefineWithProviders({ children }: { children: ReactNode }) {
       i18nProvider={i18nProvider}
       resources={[
         {
+          name: "product-management",
+          meta: { label: t("resources.productManagement") },
+        },
+        {
           name: "products",
           list: "/products",
           create: "/products/create",
           edit: "/products/edit/:id",
           show: "/products/show/:id",
-          meta: { label: t("resources.products") },
+          meta: {
+            label: t("resources.products"),
+            parent: "product-management",
+          },
         },
         {
           name: "categories",
           list: "/products/categories",
           create: "/products/categories/create",
           edit: "/products/categories/edit/:id",
-          meta: { label: t("resources.categories"), hide: true },
+          meta: {
+            label: t("resources.categories"),
+            parent: "product-management",
+          },
         },
         {
           name: "uoms",
           list: "/products/uoms",
           create: "/products/uoms/create",
           edit: "/products/uoms/edit/:id",
-          meta: { label: t("resources.uoms"), hide: true },
+          meta: {
+            label: t("resources.uoms"),
+            parent: "product-management",
+          },
         },
         {
           name: "product_uoms",

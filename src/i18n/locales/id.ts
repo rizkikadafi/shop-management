@@ -27,6 +27,7 @@ export const id: TranslationSchema = {
   warnWhenUnsavedChanges:
     "Yakin ingin meninggalkan halaman ini? Perubahan Anda belum disimpan.",
   resources: {
+    productManagement: "Manajemen Produk",
     products: "Produk",
     categories: "Kategori",
     uoms: "Satuan Ukur",

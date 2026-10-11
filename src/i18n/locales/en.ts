@@ -25,6 +25,7 @@ export const en = {
   warnWhenUnsavedChanges:
     "Are you sure you want to leave? You have unsaved changes.",
   resources: {
+    productManagement: "Product Management",
     products: "Products",
     categories: "Categories",
     uoms: "Units of Measure",

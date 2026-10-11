@@ -123,13 +123,15 @@ export function AppSider({ Title, meta }: AppSiderProps) {
         placement="left"
         closable={false}
         width={SIDER_WIDTH}
-        styles={{ body: { padding: 0 } }}
+        styles={{ body: { padding: 0, overflowX: "hidden" } }}
       >
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             height: "100%",
+            minWidth: 0,
+            overflowX: "hidden",
             backgroundColor: token.colorBgContainer,
           }}
         >
@@ -138,6 +140,8 @@ export function AppSider({ Title, meta }: AppSiderProps) {
               height: TITLE_HEIGHT,
               display: "flex",
               alignItems: "center",
+              minWidth: 0,
+              overflow: "hidden",
               padding: "0 16px",
               backgroundColor: token.colorBgElevated,
             }}
@@ -149,6 +153,8 @@ export function AppSider({ Title, meta }: AppSiderProps) {
             style={{
               borderTop: `1px solid ${token.colorBorderSecondary}`,
               padding: 8,
+              minWidth: 0,
+              overflow: "hidden",
             }}
           >
             <AccountButton />
@@ -177,6 +183,8 @@ export function AppSider({ Title, meta }: AppSiderProps) {
           display: "flex",
           alignItems: "center",
           justifyContent: siderCollapsed ? "center" : "flex-start",
+          minWidth: 0,
+          overflow: "hidden",
           padding: siderCollapsed ? 0 : "0 16px",
           backgroundColor: token.colorBgElevated,
         }}

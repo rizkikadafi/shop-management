@@ -1,6 +1,6 @@
 import { DownOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useGetIdentity, useLogout } from "@refinedev/core";
-import { Avatar, Button, Dropdown, Space, Typography } from "antd";
+import { Avatar, Button, Dropdown, Typography } from "antd";
 import type { MenuProps } from "antd";
 
 import { useI18n } from "../i18n/useI18n";
@@ -33,18 +33,31 @@ export function AccountButton({ showName = true }: { showName?: boolean }) {
 
   return (
     <Dropdown menu={menu} trigger={["click"]} placement="bottomRight">
-      <Button type="text" style={{ height: "auto", paddingInline: 8 }}>
-        <Space size={8} align="center">
+      <Button
+        type="text"
+        style={{ height: "auto", paddingInline: 8, maxWidth: "100%" }}
+      >
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            minWidth: 0,
+            maxWidth: "100%",
+          }}
+        >
           {user?.avatar ? (
             <Avatar size="small" src={user.avatar} alt={user.name} />
           ) : user?.name ? (
             <Avatar size="small">{user.name.charAt(0).toUpperCase()}</Avatar>
           ) : null}
           {showName && user?.name ? (
-            <Typography.Text strong>{user.name}</Typography.Text>
+            <Typography.Text strong ellipsis style={{ minWidth: 0 }}>
+              {user.name}
+            </Typography.Text>
           ) : null}
-          <DownOutlined style={{ fontSize: 10 }} />
-        </Space>
+          <DownOutlined style={{ fontSize: 10, flexShrink: 0 }} />
+        </span>
       </Button>
     </Dropdown>
   );
