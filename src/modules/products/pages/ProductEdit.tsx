@@ -1,10 +1,12 @@
-import { Edit, useForm } from "@refinedev/antd";
+import { Edit, useForm, useSelect } from "@refinedev/antd";
 import type { HttpError } from "@refinedev/core";
-import { Form, Input, InputNumber, Switch } from "antd";
+import { Divider, Form, Input, InputNumber, Select, Space, Switch } from "antd";
 import { toUpdate, type Product, type ProductFormValues } from "../product.schema";
+import { ProductUomsPanel } from "../components/ProductUomsPanel";
+import { ProductPricesPanel } from "../components/ProductPricesPanel";
 
 export function ProductEdit() {
-  const { formProps, saveButtonProps, onFinish } = useForm<
+  const { formProps, saveButtonProps, onFinish, query } = useForm<
     Product,
     HttpError,
     ProductFormValues
@@ -12,6 +14,17 @@ export function ProductEdit() {
     resource: "products",
     action: "edit",
     redirect: "list",
+  });
+  const record = query?.data?.data;
+  const { selectProps: categorySelectProps } = useSelect({
+    resource: "categories",
+    optionLabel: "name",
+    optionValue: "id",
+  });
+  const { selectProps: uomSelectProps } = useSelect({
+    resource: "uoms",
+    optionLabel: "name",
+    optionValue: "id",
   });
 
   const handleFinish = (values: ProductFormValues) => {
@@ -71,10 +84,34 @@ export function ProductEdit() {
           />
         </Form.Item>
 
+        <Form.Item label="Category" name="category_id">
+          <Select allowClear placeholder="Select a category" {...categorySelectProps} />
+        </Form.Item>
+
+        <Form.Item
+          label="Base Unit of Measure"
+          name="base_uom_id"
+          rules={[{ required: true, message: "Base unit is required." }]}
+        >
+          <Select showSearch placeholder="Select the base unit" {...uomSelectProps} />
+        </Form.Item>
+
         <Form.Item label="Active" name="is_active" valuePropName="checked">
           <Switch />
         </Form.Item>
       </Form>
+      {record && (
+        <>
+          <Divider />
+          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+            <ProductUomsPanel
+              productId={record.id}
+              baseUomId={record.base_uom_id}
+            />
+            <ProductPricesPanel productId={record.id} />
+          </Space>
+        </>
+      )}
     </Edit>
   );
 }

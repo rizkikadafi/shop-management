@@ -17,6 +17,8 @@ export interface ProductFormValues {
   description: string | null;
   price: number;
   is_active: boolean;
+  category_id: string | null;
+  base_uom_id: string | null;
 }
 
 /** Coerce PostgREST numeric (may arrive as string) into a number. */
@@ -33,6 +35,8 @@ export function toFormValues(product: Product): ProductFormValues {
     description: product.description,
     price: normalizePrice(product.price),
     is_active: product.is_active,
+    category_id: product.category_id,
+    base_uom_id: product.base_uom_id,
   };
 }
 
@@ -58,6 +62,8 @@ export function toInsert(
     description: blankToNull(values.description),
     price: normalizePrice(values.price),
     is_active: values.is_active,
+    category_id: values.category_id,
+    base_uom_id: values.base_uom_id ?? "",
   };
 }
 
@@ -69,5 +75,7 @@ export function toUpdate(values: ProductFormValues): ProductUpdate {
     description: blankToNull(values.description),
     price: normalizePrice(values.price),
     is_active: values.is_active,
+    category_id: values.category_id,
+    base_uom_id: values.base_uom_id ?? "",
   };
 }

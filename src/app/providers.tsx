@@ -30,6 +30,28 @@ function RefineWithProviders({ children }: { children: ReactNode }) {
           meta: { label: "Products" },
         },
         {
+          name: "categories",
+          list: "/products/categories",
+          create: "/products/categories/create",
+          edit: "/products/categories/edit/:id",
+          meta: { label: "Categories", hide: true },
+        },
+        {
+          name: "uoms",
+          list: "/products/uoms",
+          create: "/products/uoms/create",
+          edit: "/products/uoms/edit/:id",
+          meta: { label: "Units of Measure", hide: true },
+        },
+        {
+          name: "product_uoms",
+          meta: { label: "Product UoMs", hide: true },
+        },
+        {
+          name: "product_prices",
+          meta: { label: "Product Prices", hide: true },
+        },
+        {
           name: "profiles",
           list: "/users",
           create: "/users/create",

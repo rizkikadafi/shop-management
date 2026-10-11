@@ -20,7 +20,15 @@ export const accessControlProvider: AccessControlProvider = {
       return { can: role === "admin" };
     }
 
-    if (resource === "products") {
+    const writeOnlyResources = [
+      "products",
+      "categories",
+      "uoms",
+      "product_uoms",
+      "product_prices",
+    ];
+
+    if (resource && writeOnlyResources.includes(resource)) {
       if (action === "list" || action === "show") {
         return { can: true };
       }

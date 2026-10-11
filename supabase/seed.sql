@@ -107,21 +107,105 @@ update public.profiles
 set role = 'cashier', full_name = 'Shop Cashier'
 where id = '00000000-0000-0000-0000-0000000000a3';
 
-insert into public.products (id, user_id, sku, name, description, price, is_active)
+-- Reusable units of measure. The base "Piece" row is created by the
+-- categories/uoms migration; the rest are optional catalog entries.
+insert into public.uoms (id, name, symbol, uom_type)
+values
+  ('00000000-0000-0000-0000-0000000000c1', 'Piece', 'pcs', 'unit'),
+  ('00000000-0000-0000-0000-0000000000c2', 'Pack', 'pack', 'unit'),
+  ('00000000-0000-0000-0000-0000000000c3', 'Box', 'box', 'unit'),
+  ('00000000-0000-0000-0000-0000000000c4', 'Kilogram', 'kg', 'weight'),
+  ('00000000-0000-0000-0000-0000000000c5', 'Gram', 'g', 'weight'),
+  ('00000000-0000-0000-0000-0000000000c6', 'Liter', 'L', 'volume'),
+  ('00000000-0000-0000-0000-0000000000c7', 'Milliliter', 'mL', 'volume')
+on conflict (id) do nothing;
+
+-- Flat product categories.
+insert into public.categories (id, name)
+values
+  ('00000000-0000-0000-0000-0000000000d1', 'Beverages'),
+  ('00000000-0000-0000-0000-0000000000d2', 'Packaging'),
+  ('00000000-0000-0000-0000-0000000000d3', 'Food')
+on conflict (id) do nothing;
+
+insert into public.products (
+  id, user_id, sku, name, description, price, is_active, category_id, base_uom_id
+)
 values
   (
     '00000000-0000-0000-0000-0000000000b1',
     '00000000-0000-0000-0000-0000000000a1',
-    'SKU-001', 'Espresso Beans 1kg', 'Dark roast whole beans', 18.50, true
+    'SKU-001', 'Espresso Beans 1kg', 'Dark roast whole beans', 18.50, true,
+    '00000000-0000-0000-0000-0000000000d1',
+    '00000000-0000-0000-0000-0000000000c4'
   ),
   (
     '00000000-0000-0000-0000-0000000000b2',
     '00000000-0000-0000-0000-0000000000a1',
-    'SKU-002', 'Paper Cups (100)', '8oz double-wall cups', 6.25, true
+    'SKU-002', 'Paper Cups (100)', '8oz double-wall cups', 6.25, true,
+    '00000000-0000-0000-0000-0000000000d2',
+    '00000000-0000-0000-0000-0000000000c1'
   ),
   (
     '00000000-0000-0000-0000-0000000000b3',
     '00000000-0000-0000-0000-0000000000a1',
-    'SKU-003', 'Oat Milk 1L', 'Barista edition', 3.75, false
+    'SKU-003', 'Oat Milk 1L', 'Barista edition', 3.75, false,
+    '00000000-0000-0000-0000-0000000000d1',
+    '00000000-0000-0000-0000-0000000000c1'
   )
 on conflict (id) do nothing;
+
+-- Demo conversion hierarchy and package prices for the paper-cup product.
+-- 1 pack = 6 pcs, 1 box = 4 packs (24 pcs). The base "pcs" row is created
+-- automatically by the products trigger, so reference it by lookup.
+insert into public.product_uoms (
+  product_id, uom_id, parent_product_uom_id, quantity_in_parent
+)
+select
+  '00000000-0000-0000-0000-0000000000b2',
+  '00000000-0000-0000-0000-0000000000c2',
+  base.id,
+  6
+from public.product_uoms base
+where base.product_id = '00000000-0000-0000-0000-0000000000b2'
+  and base.uom_id = '00000000-0000-0000-0000-0000000000c1'
+on conflict (product_id, uom_id) do nothing;
+
+insert into public.product_uoms (
+  product_id, uom_id, parent_product_uom_id, quantity_in_parent
+)
+select
+  '00000000-0000-0000-0000-0000000000b2',
+  '00000000-0000-0000-0000-0000000000c3',
+  pack.id,
+  4
+from public.product_uoms pack
+where pack.product_id = '00000000-0000-0000-0000-0000000000b2'
+  and pack.uom_id = '00000000-0000-0000-0000-0000000000c2'
+on conflict (product_id, uom_id) do nothing;
+
+insert into public.product_prices (
+  product_id, product_uom_id, price_list, min_quantity,
+  package_quantity, package_price
+)
+select
+  '00000000-0000-0000-0000-0000000000b2',
+  pu.id,
+  'retail', 1, 1, 0.10
+from public.product_uoms pu
+where pu.product_id = '00000000-0000-0000-0000-0000000000b2'
+  and pu.uom_id = '00000000-0000-0000-0000-0000000000c1'
+on conflict (product_id, product_uom_id, price_list, min_quantity) do nothing;
+
+insert into public.product_prices (
+  product_id, product_uom_id, price_list, min_quantity,
+  package_quantity, package_price
+)
+select
+  '00000000-0000-0000-0000-0000000000b2',
+  pu.id,
+  'retail', 1, 1, 1.80
+from public.product_uoms pu
+where pu.product_id = '00000000-0000-0000-0000-0000000000b2'
+  and pu.uom_id = '00000000-0000-0000-0000-0000000000c3'
+on conflict (product_id, product_uom_id, price_list, min_quantity) do nothing;

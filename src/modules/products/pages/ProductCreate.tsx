@@ -1,6 +1,6 @@
-import { Create, useForm } from "@refinedev/antd";
+import { Create, useForm, useSelect } from "@refinedev/antd";
 import { useGetIdentity, type HttpError } from "@refinedev/core";
-import { Form, Input, InputNumber, Switch } from "antd";
+import { Form, Input, InputNumber, Select, Switch } from "antd";
 import { toInsert, type Product, type ProductFormValues } from "../product.schema";
 
 export function ProductCreate() {
@@ -11,9 +11,19 @@ export function ProductCreate() {
   >({
     resource: "products",
     action: "create",
-    redirect: "list",
+    redirect: "show",
   });
   const { data: identity } = useGetIdentity<{ id: string }>();
+  const { selectProps: categorySelectProps } = useSelect({
+    resource: "categories",
+    optionLabel: "name",
+    optionValue: "id",
+  });
+  const { selectProps: uomSelectProps } = useSelect({
+    resource: "uoms",
+    optionLabel: "name",
+    optionValue: "id",
+  });
 
   const handleFinish = (values: ProductFormValues) => {
     if (!identity?.id) {
@@ -80,6 +90,18 @@ export function ProductCreate() {
             style={{ width: "100%" }}
             addonBefore="$"
           />
+        </Form.Item>
+
+        <Form.Item label="Category" name="category_id">
+          <Select allowClear placeholder="Select a category" {...categorySelectProps} />
+        </Form.Item>
+
+        <Form.Item
+          label="Base Unit of Measure"
+          name="base_uom_id"
+          rules={[{ required: true, message: "Base unit is required." }]}
+        >
+          <Select showSearch placeholder="Select the base unit" {...uomSelectProps} />
         </Form.Item>
 
         <Form.Item label="Active" name="is_active" valuePropName="checked">

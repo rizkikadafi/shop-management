@@ -5,10 +5,16 @@ import { Outlet, Route, Routes } from "react-router";
 
 import { Login } from "../auth/Login";
 import { SyncStatus } from "../components/SyncStatus";
+import { CategoryCreate } from "../modules/categories/pages/CategoryCreate";
+import { CategoryEdit } from "../modules/categories/pages/CategoryEdit";
+import { CategoryList } from "../modules/categories/pages/CategoryList";
 import { ProductCreate } from "../modules/products/pages/ProductCreate";
 import { ProductEdit } from "../modules/products/pages/ProductEdit";
 import { ProductList } from "../modules/products/pages/ProductList";
 import { ProductShow } from "../modules/products/pages/ProductShow";
+import { UomCreate } from "../modules/uoms/pages/UomCreate";
+import { UomEdit } from "../modules/uoms/pages/UomEdit";
+import { UomList } from "../modules/uoms/pages/UomList";
 import { UserCreate } from "../modules/users/pages/UserCreate";
 import { UserEdit } from "../modules/users/pages/UserEdit";
 import { UserList } from "../modules/users/pages/UserList";
@@ -58,6 +64,60 @@ export function AppRoutes() {
               }
             />
             <Route path="show/:id" element={<ProductShow />} />
+          </Route>
+          <Route path="/products/categories">
+            <Route index element={<CategoryList />} />
+            <Route
+              path="create"
+              element={
+                <CanAccess
+                  resource="categories"
+                  action="create"
+                  fallback={<ErrorComponent />}
+                >
+                  <CategoryCreate />
+                </CanAccess>
+              }
+            />
+            <Route
+              path="edit/:id"
+              element={
+                <CanAccess
+                  resource="categories"
+                  action="edit"
+                  fallback={<ErrorComponent />}
+                >
+                  <CategoryEdit />
+                </CanAccess>
+              }
+            />
+          </Route>
+          <Route path="/products/uoms">
+            <Route index element={<UomList />} />
+            <Route
+              path="create"
+              element={
+                <CanAccess
+                  resource="uoms"
+                  action="create"
+                  fallback={<ErrorComponent />}
+                >
+                  <UomCreate />
+                </CanAccess>
+              }
+            />
+            <Route
+              path="edit/:id"
+              element={
+                <CanAccess
+                  resource="uoms"
+                  action="edit"
+                  fallback={<ErrorComponent />}
+                >
+                  <UomEdit />
+                </CanAccess>
+              }
+            />
           </Route>
           <Route path="/users">
             <Route

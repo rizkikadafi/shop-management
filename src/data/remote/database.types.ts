@@ -23,19 +23,103 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "products": {
+            "categories": {
                   Row: {
-                    "created_at": string,"deleted_at": string | null,"description": string | null,"id": string,"is_active": boolean,"name": string,"price": number,"sku": string | null,"updated_at": string,"user_id": string
+                    "created_at": string,"id": string,"name": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"deleted_at"?: string | null,"description"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"price"?: number,"sku"?: string | null,"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"name": string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"deleted_at"?: string | null,"description"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"price"?: number,"sku"?: string | null,"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"name"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
+                  ]
+                },"product_prices": {
+                  Row: {
+                    "created_at": string,"id": string,"min_quantity": number,"package_price": number,"package_quantity": number,"price_list": string,"product_id": string,"product_uom_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"min_quantity": number,"package_price": number,"package_quantity": number,"price_list"?: string,"product_id": string,"product_uom_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"min_quantity"?: number,"package_price"?: number,"package_quantity"?: number,"price_list"?: string,"product_id"?: string,"product_uom_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_prices_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "product_prices_product_uom_id_product_id_fkey"
+      columns: ["product_uom_id","product_id"]
+isOneToOne: false
+      referencedRelation: "product_uoms"
+      referencedColumns: ["id","product_id"]
+    }
+                  ]
+                },"product_uoms": {
+                  Row: {
+                    "created_at": string,"id": string,"parent_product_uom_id": string | null,"product_id": string,"quantity_in_parent": number,"uom_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"parent_product_uom_id"?: string | null,"product_id": string,"quantity_in_parent": number,"uom_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"parent_product_uom_id"?: string | null,"product_id"?: string,"quantity_in_parent"?: number,"uom_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_uoms_parent_product_uom_id_product_id_fkey"
+      columns: ["parent_product_uom_id","product_id"]
+isOneToOne: false
+      referencedRelation: "product_uoms"
+      referencedColumns: ["id","product_id"]
+    },{
+      foreignKeyName: "product_uoms_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "product_uoms_uom_id_fkey"
+      columns: ["uom_id"]
+isOneToOne: false
+      referencedRelation: "uoms"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"products": {
+                  Row: {
+                    "base_uom_id": string,"category_id": string | null,"created_at": string,"deleted_at": string | null,"description": string | null,"id": string,"is_active": boolean,"name": string,"price": number,"sku": string | null,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "base_uom_id": string,"category_id"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"description"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"price"?: number,"sku"?: string | null,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "base_uom_id"?: string,"category_id"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"description"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"price"?: number,"sku"?: string | null,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "products_base_uom_id_fkey"
+      columns: ["base_uom_id"]
+isOneToOne: false
+      referencedRelation: "uoms"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "products_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "categories"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"profiles": {
                   Row: {
@@ -47,6 +131,20 @@ export type Database = {
                   }
                   Update: {
                     "created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id"?: string,"is_active"?: boolean,"role"?: Database["public"]['Enums']["app_role"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"uoms": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"symbol": string,"uom_type": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"name": string,"symbol": string,"uom_type": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"symbol"?: string,"uom_type"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
