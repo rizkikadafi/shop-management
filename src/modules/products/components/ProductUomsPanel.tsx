@@ -54,7 +54,7 @@ export function ProductUomsPanel({ productId, baseUomId }: ProductUomsPanelProps
   const [editing, setEditing] = useState<ProductUomRow | null>(null);
   const [form] = Form.useForm<UomFormValues>();
 
-  const rows = result.data ?? [];
+  const rows = useMemo(() => result.data ?? [], [result.data]);
   const isLoading = query.isLoading;
   const refetch = query.refetch;
 
@@ -72,7 +72,10 @@ export function ProductUomsPanel({ productId, baseUomId }: ProductUomsPanelProps
     resource: "uoms",
     pagination: { pageSize: 1000 },
   });
-  const uomRecords = uomsQuery.result.data ?? [];
+  const uomRecords = useMemo(
+    () => uomsQuery.result.data ?? [],
+    [uomsQuery.result.data],
+  );
 
   const availableUomOptions = useMemo(() => {
     const options = uomRecords.map((uom) => ({

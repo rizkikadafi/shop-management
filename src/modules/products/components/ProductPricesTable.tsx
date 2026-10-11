@@ -38,7 +38,10 @@ export function ProductPricesTable({ productId }: ProductPricesTableProps) {
     pagination: { pageSize: 1000 },
     meta: { select: "id, uom_id, uom:uom_id(name, symbol)" },
   });
-  const uomRecords = uomQuery.result.data ?? [];
+  const uomRecords = useMemo(
+    () => uomQuery.result.data ?? [],
+    [uomQuery.result.data],
+  );
 
   const { query, result } = useList<ProductPrice>({
     resource: "product_prices",

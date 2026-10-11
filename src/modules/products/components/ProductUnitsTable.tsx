@@ -40,7 +40,7 @@ export function ProductUnitsTable({
     },
   });
 
-  const rows = result.data ?? [];
+  const rows = useMemo(() => result.data ?? [], [result.data]);
   const isLoading = query.isLoading;
 
   const unitById = useMemo(

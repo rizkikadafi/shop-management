@@ -42,7 +42,10 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
     filters: [{ field: "product_id", operator: "eq", value: productId }],
     meta: { select: "id, uom_id, uom:uom_id(name, symbol)" },
   });
-  const uomRecords = uomQuery.result.data ?? [];
+  const uomRecords = useMemo(
+    () => uomQuery.result.data ?? [],
+    [uomQuery.result.data],
+  );
 
   const { query, result } = useList<PriceRow>({
     resource: "product_prices",
