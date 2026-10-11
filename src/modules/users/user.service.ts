@@ -1,4 +1,5 @@
 import { supabaseClient } from "../../data/remote/supabase";
+import { translate } from "../../i18n/i18nProvider";
 import type { AppRole, CreateUserValues } from "./user.schema";
 
 /**
@@ -36,7 +37,7 @@ async function extractError(error: unknown): Promise<string> {
       // fall through to the generic message
     }
   }
-  return (error as { message?: string }).message ?? "Request failed.";
+  return (error as { message?: string }).message ?? translate("auth.requestFailed");
 }
 
 export const userService = {

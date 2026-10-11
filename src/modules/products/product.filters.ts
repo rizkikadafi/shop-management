@@ -20,9 +20,9 @@ function findFilter(
 export const PRODUCT_FILTER_COLUMNS: FilterColumnDef[] = [
   {
     key: "name",
-    label: "Name",
+    labelKey: "products.columns.name",
     type: "text",
-    placeholder: "Product name",
+    placeholderKey: "products.form.namePlaceholder",
     toFilters: (value) => {
       const text = typeof value === "string" ? value.trim() : "";
       return text ? [{ field: "name", operator: "contains", value: text }] : [];
@@ -34,9 +34,9 @@ export const PRODUCT_FILTER_COLUMNS: FilterColumnDef[] = [
   },
   {
     key: "sku",
-    label: "SKU",
+    labelKey: "products.columns.sku",
     type: "text",
-    placeholder: "SKU",
+    placeholderKey: "products.columns.sku",
     toFilters: (value) => {
       const text = typeof value === "string" ? value.trim() : "";
       return text ? [{ field: "sku", operator: "contains", value: text }] : [];
@@ -48,11 +48,11 @@ export const PRODUCT_FILTER_COLUMNS: FilterColumnDef[] = [
   },
   {
     key: "is_active",
-    label: "Status",
+    labelKey: "common.status",
     type: "select",
     options: [
-      { label: "Active", value: true },
-      { label: "Inactive", value: false },
+      { labelKey: "common.active", value: true },
+      { labelKey: "common.inactive", value: false },
     ],
     toFilters: (value) =>
       typeof value === "boolean"
@@ -65,7 +65,7 @@ export const PRODUCT_FILTER_COLUMNS: FilterColumnDef[] = [
   },
   {
     key: "price",
-    label: "Price",
+    labelKey: "products.columns.price",
     type: "numberRange",
     toFilters: (value) => {
       const [min, max] = (value as [number | null, number | null]) ?? [];
@@ -87,7 +87,7 @@ export const PRODUCT_FILTER_COLUMNS: FilterColumnDef[] = [
   },
   {
     key: "created_at",
-    label: "Created",
+    labelKey: "common.created",
     type: "dateRange",
     toFilters: (value) => {
       const [start, end] = (value as [Dayjs, Dayjs]) ?? [];

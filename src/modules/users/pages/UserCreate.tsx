@@ -3,10 +3,12 @@ import { useNotification } from "@refinedev/core";
 import { Form, Input, Select } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useI18n } from "../../../i18n/useI18n";
 import { userService } from "../user.service";
 import { ROLES, type CreateUserValues } from "../user.schema";
 
 export function UserCreate() {
+  const { t } = useI18n();
   const [form] = Form.useForm<CreateUserValues>();
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
@@ -16,12 +18,12 @@ export function UserCreate() {
     setSaving(true);
     try {
       await userService.create(values);
-      open?.({ type: "success", message: "User created." });
+      open?.({ type: "success", message: t("users.notifications.created") });
       navigate("/users");
     } catch (error) {
       open?.({
         type: "error",
-        message: "Could not create user.",
+        message: t("users.notifications.createError"),
         description: error instanceof Error ? error.message : undefined,
       });
     } finally {
@@ -31,7 +33,7 @@ export function UserCreate() {
 
   return (
     <Create
-      title="Create user"
+      title={t("users.create")}
       saveButtonProps={{
         onClick: () => form.submit(),
         loading: saving,
@@ -46,33 +48,38 @@ export function UserCreate() {
       >
         <Form.Item
           name="email"
-          label="Email"
+          label={t("users.form.email")}
           rules={[
-            { required: true, message: "Email is required." },
-            { type: "email", message: "Enter a valid email." },
+            { required: true, message: t("users.validation.emailRequired") },
+            { type: "email", message: t("users.validation.emailValid") },
           ]}
         >
           <Input autoComplete="off" />
         </Form.Item>
 
-        <Form.Item name="full_name" label="Full name">
+        <Form.Item name="full_name" label={t("users.form.fullName")}>
           <Input />
         </Form.Item>
 
         <Form.Item
           name="role"
-          label="Role"
-          rules={[{ required: true, message: "Role is required." }]}
+          label={t("users.form.role")}
+          rules={[{ required: true, message: t("users.validation.roleRequired") }]}
         >
-          <Select options={ROLES} />
+          <Select
+            options={ROLES.map((role) => ({
+              value: role.value,
+              label: t(role.labelKey),
+            }))}
+          />
         </Form.Item>
 
         <Form.Item
           name="password"
-          label="Initial password"
+          label={t("users.form.password")}
           rules={[
-            { required: true, message: "Password is required." },
-            { min: 6, message: "At least 6 characters." },
+            { required: true, message: t("users.validation.passwordRequired") },
+            { min: 6, message: t("users.validation.passwordMin") },
           ]}
         >
           <Input.Password autoComplete="new-password" />

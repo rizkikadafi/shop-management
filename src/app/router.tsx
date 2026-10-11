@@ -4,7 +4,9 @@ import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
 import { Outlet, Route, Routes } from "react-router";
 
 import { Login } from "../auth/Login";
-import { SyncStatus } from "../components/SyncStatus";
+import { AppHeader } from "../components/AppHeader";
+import { AppSider } from "../components/AppSider";
+import { AppTitle } from "../components/AppTitle";
 import { CategoryCreate } from "../modules/categories/pages/CategoryCreate";
 import { CategoryEdit } from "../modules/categories/pages/CategoryEdit";
 import { CategoryList } from "../modules/categories/pages/CategoryList";
@@ -21,16 +23,14 @@ import { UserList } from "../modules/users/pages/UserList";
 
 export function AppRoutes() {
   return (
-    <>
-      <SyncStatus />
-      <Routes>
+    <Routes>
         <Route
           element={
             <Authenticated
               key="authenticated-inner"
               fallback={<CatchAllNavigate to="/login" />}
             >
-              <ThemedLayout>
+              <ThemedLayout Header={AppHeader} Sider={AppSider} Title={AppTitle}>
                 <Outlet />
               </ThemedLayout>
             </Authenticated>
@@ -170,6 +170,5 @@ export function AppRoutes() {
           <Route path="/login" element={<Login />} />
         </Route>
       </Routes>
-    </>
   );
 }

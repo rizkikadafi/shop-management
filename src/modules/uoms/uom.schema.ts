@@ -10,12 +10,20 @@ export const UOM_LIMITS = {
 } as const;
 
 export const UOM_TYPES = [
-  { value: "unit", label: "Unit" },
-  { value: "weight", label: "Weight" },
-  { value: "volume", label: "Volume" },
+  { value: "unit", labelKey: "uoms.types.unit" },
+  { value: "weight", labelKey: "uoms.types.weight" },
+  { value: "volume", labelKey: "uoms.types.volume" },
 ] as const;
 
 export type UomType = (typeof UOM_TYPES)[number]["value"];
+
+export const UOM_TYPE_LABEL_KEYS = UOM_TYPES.reduce<Record<UomType, string>>(
+  (keys, type) => {
+    keys[type.value] = type.labelKey;
+    return keys;
+  },
+  {} as Record<UomType, string>,
+);
 
 export const UOM_TYPE_COLORS: Record<UomType, string> = {
   unit: "blue",

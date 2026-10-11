@@ -1,6 +1,7 @@
 import { useList } from "@refinedev/core";
 import { Space, Table, Tag } from "antd";
 import { useMemo } from "react";
+import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
 
 type ProductUom = Database["public"]["Tables"]["product_uoms"]["Row"];
@@ -14,8 +15,8 @@ interface ProductUnitsTableProps {
   baseUomId: string;
 }
 
-function symbolOf(uom: ProductUomRow): string {
-  return uom.uom?.symbol || uom.uom?.name || "unit";
+function symbolOf(uom: ProductUomRow, fallback: string): string {
+  return uom.uom?.symbol || uom.uom?.name || fallback;
 }
 
 /** Trim trailing zeros from a PostgREST numeric (e.g. 6.000000 -> "6"). */
@@ -28,6 +29,7 @@ export function ProductUnitsTable({
   productId,
   baseUomId,
 }: ProductUnitsTableProps) {
+  const { t } = useI18n();
   const { query, result } = useList<ProductUomRow>({
     resource: "product_uoms",
     filters: [{ field: "product_id", operator: "eq", value: productId }],
@@ -54,26 +56,28 @@ export function ProductUnitsTable({
       loading={isLoading}
       dataSource={rows}
       pagination={false}
+      scroll={{ x: "max-content" }}
     >
       <Table.Column<ProductUomRow>
-        title="Unit"
+        title={t("productUnits.unit")}
         render={(_, row) => (
           <Space>
             {row.uom ? `${row.uom.name} (${row.uom.symbol ?? ""})` : row.uom_id}
-            {isBase(row) && <Tag color="green">Base</Tag>}
+            {isBase(row) && <Tag color="green">{t("productUnits.base")}</Tag>}
           </Space>
         )}
       />
       <Table.Column<ProductUomRow>
-        title="Conversion"
+        title={t("productUnits.conversion")}
         render={(_, row) => {
           if (!row.parent_product_uom_id) {
-            return "—";
+            return t("common.none");
           }
           const parent = unitById.get(row.parent_product_uom_id);
+          const fallback = t("productUnits.unit");
           return parent
-            ? `1 ${symbolOf(row)} = ${formatQty(row.quantity_in_parent)} ${symbolOf(parent)}`
-            : "—";
+            ? `1 ${symbolOf(row, fallback)} = ${formatQty(row.quantity_in_parent)} ${symbolOf(parent, fallback)}`
+            : t("common.none");
         }}
       />
     </Table>

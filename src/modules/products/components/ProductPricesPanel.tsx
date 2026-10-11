@@ -8,6 +8,7 @@ import {
 import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Table } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useMemo, useState } from "react";
+import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
 
 type ProductPrice = Database["public"]["Tables"]["product_prices"]["Row"];
@@ -26,6 +27,7 @@ interface ProductPricesPanelProps {
 }
 
 export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
+  const { t, formatCurrency } = useI18n();
   const { data: canWriteData } = useCan({
     resource: "product_prices",
     action: "create",
@@ -107,8 +109,8 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
           invalidates: ["list"],
           successNotification: {
             type: "success",
-            message: "Price rule updated",
-            description: "The price rule was updated.",
+            message: t("productPrices.updated"),
+            description: t("productPrices.updatedDescription"),
           },
         },
         { onSuccess: () => setModalOpen(false) },
@@ -130,8 +132,8 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
         invalidates: ["list"],
         successNotification: {
           type: "success",
-          message: "Price rule added",
-          description: "The price rule was added.",
+          message: t("productPrices.added"),
+          description: t("productPrices.addedDescription"),
         },
       },
       {
@@ -149,15 +151,13 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
         invalidates: ["list"],
         successNotification: {
           type: "success",
-          message: "Price rule removed",
-          description: "The price rule was removed.",
+          message: t("productPrices.removed"),
+          description: t("productPrices.removedDescription"),
         },
       },
       { onError: () => refetch() },
     );
   };
-
-  const renderPrice = (value: number | string) => Number(value).toFixed(2);
 
   return (
     <>
@@ -166,9 +166,10 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
         loading={isLoading}
         dataSource={rows}
         pagination={false}
+        scroll={{ x: "max-content" }}
         title={() => (
           <Space style={{ width: "100%", justifyContent: "space-between" }}>
-            <span>Price Rules</span>
+            <span>{t("productPrices.title")}</span>
             {canWrite && (
               <Button
                 type="primary"
@@ -176,14 +177,14 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
                 icon={<PlusOutlined />}
                 onClick={openCreate}
               >
-                Add price rule
+                {t("productPrices.add")}
               </Button>
             )}
           </Space>
         )}
       >
         <Table.Column<PriceRow>
-          title="Unit"
+          title={t("productPrices.unit")}
           render={(_, row) => {
             const productUom = uomById.get(row.product_uom_id);
             return productUom?.uom
@@ -191,31 +192,34 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
               : row.product_uom_id;
           }}
         />
-        <Table.Column<PriceRow> title="Price list" dataIndex="price_list" />
         <Table.Column<PriceRow>
-          title="Min qty"
+          title={t("productPrices.priceList")}
+          dataIndex="price_list"
+        />
+        <Table.Column<PriceRow>
+          title={t("productPrices.minQty")}
           align="right"
           dataIndex="min_quantity"
         />
         <Table.Column<PriceRow>
-          title="Price"
+          title={t("productPrices.price")}
           align="right"
-          render={(_, row) => renderPrice(row.package_price)}
+          render={(_, row) => formatCurrency(row.package_price)}
         />
         <Table.Column<PriceRow>
-          title="Actions"
+          title={t("productPrices.actions")}
           render={(_, row) =>
             canWrite ? (
               <Space>
                 <Button size="small" onClick={() => openEdit(row)}>
-                  Edit
+                  {t("common.edit")}
                 </Button>
                 <Popconfirm
-                  title="Remove this price rule?"
+                  title={t("productPrices.removeConfirm")}
                   onConfirm={() => handleDelete(row)}
                 >
                   <Button size="small" danger>
-                    Remove
+                    {t("common.remove")}
                   </Button>
                 </Popconfirm>
               </Space>
@@ -225,7 +229,7 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
       </Table>
 
       <Modal
-        title={editing ? "Edit price rule" : "Add price rule"}
+        title={editing ? t("productPrices.edit") : t("productPrices.add")}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={() => form.submit()}
@@ -233,32 +237,39 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>
           <Form.Item
-            label="Unit"
+            label={t("productPrices.unit")}
             name="product_uom_id"
-            rules={[{ required: true, message: "Unit is required." }]}
+            rules={[
+              { required: true, message: t("productPrices.unitRequired") },
+            ]}
           >
             <Select
               showSearch
-              placeholder="Select a product unit"
+              placeholder={t("productPrices.unitPlaceholder")}
               options={uomOptions}
             />
           </Form.Item>
           <Form.Item
-            label="Price list"
+            label={t("productPrices.priceList")}
             name="price_list"
-            rules={[{ required: true, message: "Price list is required." }]}
+            rules={[
+              { required: true, message: t("productPrices.priceListRequired") },
+            ]}
           >
-            <Input placeholder="e.g. retail or wholesale" />
+            <Input placeholder={t("productPrices.priceListPlaceholder")} />
           </Form.Item>
           <Form.Item
-            label="Minimum quantity"
+            label={t("productPrices.minQuantity")}
             name="min_quantity"
             rules={[
-              { required: true, message: "Minimum quantity is required." },
+              {
+                required: true,
+                message: t("productPrices.minQuantityRequired"),
+              },
               {
                 type: "number",
                 min: 0.000001,
-                message: "Minimum quantity must be greater than zero.",
+                message: t("productPrices.minQuantityMin"),
               },
             ]}
           >
@@ -270,14 +281,14 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
             />
           </Form.Item>
           <Form.Item
-            label="Price"
+            label={t("productPrices.price")}
             name="package_price"
             rules={[
-              { required: true, message: "Price is required." },
+              { required: true, message: t("productPrices.priceRequired") },
               {
                 type: "number",
                 min: 0,
-                message: "Price must be zero or greater.",
+                message: t("productPrices.priceMin"),
               },
             ]}
           >

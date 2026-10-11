@@ -1,6 +1,7 @@
 import { Button, DatePicker, Input, InputNumber, Select, Space } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
+import { useI18n } from "../i18n/useI18n";
 import type { FilterColumnDef, FilterCondition } from "./filtering";
 
 interface ColumnFilterBarProps {
@@ -26,6 +27,7 @@ export function ColumnFilterBar({
   onSubmit,
   onClear,
 }: ColumnFilterBarProps) {
+  const { t } = useI18n();
   const usedColumns = new Set(value.map((condition) => condition.column));
   const nextAvailable = columns.find((column) => !usedColumns.has(column.key));
 
@@ -70,7 +72,7 @@ export function ColumnFilterBar({
               onChange={(columnKey) => changeColumn(condition.id, columnKey)}
               options={columns.map((column) => ({
                 value: column.key,
-                label: column.label,
+                label: t(column.labelKey),
                 disabled:
                   column.key !== condition.column &&
                   usedColumns.has(column.key),
@@ -98,12 +100,12 @@ export function ColumnFilterBar({
           onClick={addCondition}
           disabled={!nextAvailable}
         >
-          Add filter
+          {t("filters.add")}
         </Button>
         <Button type="primary" onClick={onSubmit}>
-          Filter
+          {t("filters.filter")}
         </Button>
-        <Button onClick={onClear}>Clear</Button>
+        <Button onClick={onClear}>{t("filters.clear")}</Button>
       </Space>
     </Space>
   );
@@ -122,12 +124,14 @@ function FilterValueControl({
   onChange,
   onSubmit,
 }: FilterValueControlProps) {
+  const { t } = useI18n();
+
   if (def.type === "text") {
     return (
       <Input
         style={{ width: 220 }}
         allowClear
-        placeholder={def.placeholder}
+        placeholder={def.placeholderKey ? t(def.placeholderKey) : undefined}
         value={(value as string) ?? ""}
         onChange={(event) => onChange(event.target.value)}
         onPressEnter={onSubmit}
@@ -140,8 +144,11 @@ function FilterValueControl({
       <Select
         style={{ minWidth: 160 }}
         allowClear
-        placeholder={def.placeholder ?? "Any"}
-        options={def.options}
+        placeholder={def.placeholderKey ? t(def.placeholderKey) : t("common.any")}
+        options={def.options?.map((option) => ({
+          label: t(option.labelKey),
+          value: option.value,
+        }))}
         value={value as string | number | boolean | undefined}
         onChange={onChange}
       />
@@ -157,14 +164,14 @@ function FilterValueControl({
       <Space>
         <InputNumber
           min={0}
-          placeholder="Min"
+          placeholder={t("common.min")}
           style={{ width: 110 }}
           value={min ?? null}
           onChange={(next) => onChange([next ?? null, max ?? null])}
         />
         <InputNumber
           min={0}
-          placeholder="Max"
+          placeholder={t("common.max")}
           style={{ width: 110 }}
           value={max ?? null}
           onChange={(next) => onChange([min ?? null, next ?? null])}

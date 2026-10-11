@@ -20,9 +20,9 @@ function findFilter(
 export const UOM_FILTER_COLUMNS: FilterColumnDef[] = [
   {
     key: "name",
-    label: "Name",
+    labelKey: "uoms.columns.name",
     type: "text",
-    placeholder: "Unit name",
+    placeholderKey: "uoms.form.name",
     toFilters: (value) => {
       const text = typeof value === "string" ? value.trim() : "";
       return text ? [{ field: "name", operator: "contains", value: text }] : [];
@@ -34,9 +34,9 @@ export const UOM_FILTER_COLUMNS: FilterColumnDef[] = [
   },
   {
     key: "symbol",
-    label: "Symbol",
+    labelKey: "uoms.columns.symbol",
     type: "text",
-    placeholder: "Symbol",
+    placeholderKey: "uoms.columns.symbol",
     toFilters: (value) => {
       const text = typeof value === "string" ? value.trim() : "";
       return text ? [{ field: "symbol", operator: "contains", value: text }] : [];
@@ -48,7 +48,7 @@ export const UOM_FILTER_COLUMNS: FilterColumnDef[] = [
   },
   {
     key: "uom_type",
-    label: "Type",
+    labelKey: "uoms.columns.type",
     type: "select",
     options: UOM_TYPES.map((type) => ({ ...type })),
     toFilters: (value) =>

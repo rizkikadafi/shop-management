@@ -1,6 +1,7 @@
 import { Create, useForm } from "@refinedev/antd";
 import type { HttpError } from "@refinedev/core";
 import { Form, Input, Select } from "antd";
+import { useI18n } from "../../../i18n/useI18n";
 import {
   UOM_LIMITS,
   UOM_TYPES,
@@ -10,6 +11,7 @@ import {
 } from "../uom.schema";
 
 export function UomCreate() {
+  const { t } = useI18n();
   const { formProps, saveButtonProps, onFinish } = useForm<
     Uom,
     HttpError,
@@ -33,39 +35,44 @@ export function UomCreate() {
         onFinish={handleFinish}
       >
         <Form.Item
-          label="Name"
+          label={t("uoms.form.name")}
           name="name"
           rules={[
-            { required: true, message: "Name is required." },
+            { required: true, message: t("uoms.validation.nameRequired") },
             {
               max: UOM_LIMITS.name,
-              message: `Name must be ${UOM_LIMITS.name} characters or fewer.`,
+              message: t("uoms.validation.nameMax", { max: UOM_LIMITS.name }),
             },
           ]}
         >
-          <Input placeholder="e.g. Kilogram" />
+          <Input placeholder={t("uoms.form.namePlaceholder")} />
         </Form.Item>
 
         <Form.Item
-          label="Symbol"
+          label={t("uoms.form.symbol")}
           name="symbol"
           rules={[
-            { required: true, message: "Symbol is required." },
+            { required: true, message: t("uoms.validation.symbolRequired") },
             {
               max: UOM_LIMITS.symbol,
-              message: `Symbol must be ${UOM_LIMITS.symbol} characters or fewer.`,
+              message: t("uoms.validation.symbolMax", { max: UOM_LIMITS.symbol }),
             },
           ]}
         >
-          <Input placeholder="e.g. kg" />
+          <Input placeholder={t("uoms.form.symbolPlaceholder")} />
         </Form.Item>
 
         <Form.Item
-          label="Type"
+          label={t("uoms.form.type")}
           name="uom_type"
-          rules={[{ required: true, message: "Type is required." }]}
+          rules={[{ required: true, message: t("uoms.validation.typeRequired") }]}
         >
-          <Select options={UOM_TYPES.map((type) => ({ ...type }))} />
+          <Select
+            options={UOM_TYPES.map((type) => ({
+              value: type.value,
+              label: t(type.labelKey),
+            }))}
+          />
         </Form.Item>
       </Form>
     </Create>

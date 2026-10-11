@@ -13,6 +13,7 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { useI18n } from "../../../i18n/useI18n";
 import { ROLES, type AppRole, type Profile } from "../user.schema";
 import { userService } from "../user.service";
 
@@ -24,6 +25,7 @@ interface RoleFormValues {
 export function UserEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { open } = useNotification();
   const [form] = Form.useForm<RoleFormValues>();
   const [passwordForm] = Form.useForm<{ password: string }>();
@@ -56,12 +58,12 @@ export function UserEdit() {
     try {
       await userService.updateRole(id, values.role);
       await userService.setActive(id, values.is_active);
-      open?.({ type: "success", message: "User updated." });
+      open?.({ type: "success", message: t("users.notifications.updated") });
       navigate("/users");
     } catch (error) {
       open?.({
         type: "error",
-        message: "Could not update user.",
+        message: t("users.notifications.updateError"),
         description: error instanceof Error ? error.message : undefined,
       });
     } finally {
@@ -77,11 +79,11 @@ export function UserEdit() {
     try {
       await userService.resetPassword(id, password);
       passwordForm.resetFields();
-      open?.({ type: "success", message: "Password updated." });
+      open?.({ type: "success", message: t("users.notifications.passwordUpdated") });
     } catch (error) {
       open?.({
         type: "error",
-        message: "Could not reset password.",
+        message: t("users.notifications.passwordError"),
         description: error instanceof Error ? error.message : undefined,
       });
     } finally {
@@ -93,41 +95,49 @@ export function UserEdit() {
     <Space direction="vertical" size="large" style={{ width: "100%" }}>
       <Space>
         <Typography.Title level={3} style={{ margin: 0 }}>
-          Edit user
+          {t("users.editTitle")}
         </Typography.Title>
-        <Button onClick={() => navigate("/users")}>Back</Button>
+        <Button onClick={() => navigate("/users")}>{t("users.back")}</Button>
       </Space>
 
       {isSelf && (
-        <Alert
-          type="info"
-          showIcon
-          message="You cannot change your own role or active status."
-        />
+        <Alert type="info" showIcon message={t("users.selfWarning")} />
       )}
 
       {query.isLoading ? (
         <Spin />
       ) : (
         <>
-          <Card title={profile?.email ?? "User"}>
+          <Card title={profile?.email ?? t("users.userFallback")}>
             <Form
               form={form}
               layout="vertical"
               onFinish={handleSave}
               style={{ maxWidth: 420 }}
             >
-              <Form.Item name="full_name" label="Name">
+              <Form.Item name="full_name" label={t("users.form.fullName")}>
                 <Input disabled value={profile?.full_name ?? undefined} />
               </Form.Item>
               <Form.Item
                 name="role"
-                label="Role"
-                rules={[{ required: true, message: "Role is required." }]}
+                label={t("users.form.role")}
+                rules={[
+                  { required: true, message: t("users.validation.roleRequired") },
+                ]}
               >
-                <Select options={ROLES} disabled={isSelf} />
+                <Select
+                  options={ROLES.map((role) => ({
+                    value: role.value,
+                    label: t(role.labelKey),
+                  }))}
+                  disabled={isSelf}
+                />
               </Form.Item>
-              <Form.Item name="is_active" label="Active" valuePropName="checked">
+              <Form.Item
+                name="is_active"
+                label={t("users.form.active")}
+                valuePropName="checked"
+              >
                 <Switch disabled={isSelf} />
               </Form.Item>
               <Button
@@ -136,12 +146,12 @@ export function UserEdit() {
                 disabled={isSelf || saving}
                 onClick={() => form.submit()}
               >
-                Save
+                {t("common.save")}
               </Button>
             </Form>
           </Card>
 
-          <Card title="Reset password">
+          <Card title={t("users.resetPassword")}>
             <Form
               form={passwordForm}
               layout="vertical"
@@ -150,16 +160,19 @@ export function UserEdit() {
             >
               <Form.Item
                 name="password"
-                label="New password"
+                label={t("users.newPassword")}
                 rules={[
-                  { required: true, message: "Password is required." },
-                  { min: 6, message: "At least 6 characters." },
+                  {
+                    required: true,
+                    message: t("users.validation.passwordRequired"),
+                  },
+                  { min: 6, message: t("users.validation.passwordMin") },
                 ]}
               >
                 <Input.Password autoComplete="new-password" />
               </Form.Item>
               <Button type="primary" htmlType="submit" loading={resetting}>
-                Set password
+                {t("users.setPassword")}
               </Button>
             </Form>
           </Card>

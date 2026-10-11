@@ -1,7 +1,8 @@
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { Descriptions, Tag, Tabs } from "antd";
-import { normalizePrice, type Product } from "../product.schema";
+import { useI18n } from "../../../i18n/useI18n";
+import { type Product } from "../product.schema";
 import { ProductUnitsTable } from "../components/ProductUnitsTable";
 import { ProductPricesTable } from "../components/ProductPricesTable";
 
@@ -11,6 +12,7 @@ type ProductRecord = Product & {
 };
 
 export function ProductShow() {
+  const { t, formatCurrency, formatDateTime } = useI18n();
   const { query, result } = useShow<Product>({
     resource: "products",
     meta: {
@@ -26,50 +28,54 @@ export function ProductShow() {
         items={[
           {
             key: "general",
-            label: "General Information",
+            label: t("products.show.general"),
             children: (
               <Descriptions column={1} bordered size="middle">
-                <Descriptions.Item label="Name">
+                <Descriptions.Item label={t("products.columns.name")}>
                   {record?.name}
                 </Descriptions.Item>
-                <Descriptions.Item label="SKU">
-                  {record?.sku ?? "—"}
+                <Descriptions.Item label={t("products.columns.sku")}>
+                  {record?.sku ?? t("common.none")}
                 </Descriptions.Item>
-                <Descriptions.Item label="Description">
-                  {record?.description ?? "—"}
+                <Descriptions.Item label={t("products.form.description")}>
+                  {record?.description ?? t("common.none")}
                 </Descriptions.Item>
-                <Descriptions.Item label="Category">
-                  {record?.category?.name ?? "—"}
+                <Descriptions.Item label={t("products.columns.category")}>
+                  {record?.category?.name ?? t("common.none")}
                 </Descriptions.Item>
-                <Descriptions.Item label="Base Unit of Measure">
+                <Descriptions.Item label={t("products.form.baseUom")}>
                   {record?.base_uom
                     ? `${record.base_uom.name} (${record.base_uom.symbol ?? ""})`
-                    : "—"}
+                    : t("common.none")}
                 </Descriptions.Item>
-                <Descriptions.Item label="Price">
-                  {record ? normalizePrice(record.price).toFixed(2) : "—"}
+                <Descriptions.Item label={t("products.columns.price")}>
+                  {record ? formatCurrency(record.price) : t("common.none")}
                 </Descriptions.Item>
-                <Descriptions.Item label="Status">
+                <Descriptions.Item label={t("common.status")}>
                   {record ? (
                     <Tag color={record.is_active ? "green" : "default"}>
-                      {record.is_active ? "Active" : "Inactive"}
+                      {record.is_active ? t("common.active") : t("common.inactive")}
                     </Tag>
                   ) : (
-                    "—"
+                    t("common.none")
                   )}
                 </Descriptions.Item>
-                <Descriptions.Item label="Created">
-                  {record ? new Date(record.created_at).toLocaleString() : "—"}
+                <Descriptions.Item label={t("products.show.created")}>
+                  {record
+                    ? formatDateTime(record.created_at)
+                    : t("common.none")}
                 </Descriptions.Item>
-                <Descriptions.Item label="Updated">
-                  {record ? new Date(record.updated_at).toLocaleString() : "—"}
+                <Descriptions.Item label={t("products.show.updated")}>
+                  {record
+                    ? formatDateTime(record.updated_at)
+                    : t("common.none")}
                 </Descriptions.Item>
               </Descriptions>
             ),
           },
           {
             key: "units",
-            label: "Unit Conversions",
+            label: t("products.show.units"),
             children: record ? (
               <ProductUnitsTable
                 productId={record.id}
@@ -79,7 +85,7 @@ export function ProductShow() {
           },
           {
             key: "pricing",
-            label: "Pricing Information",
+            label: t("products.show.pricing"),
             children: record ? (
               <ProductPricesTable productId={record.id} />
             ) : null,

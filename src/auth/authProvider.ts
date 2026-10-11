@@ -1,5 +1,6 @@
 import type { AuthProvider } from "@refinedev/core";
 import { supabaseClient } from "../data/remote/supabase";
+import { translate } from "../i18n/i18nProvider";
 import { clearRoleCache, getCurrentRole } from "./permissions";
 
 interface Credentials {
@@ -23,7 +24,10 @@ export const authProvider: AuthProvider = {
     if (!email || !password) {
       return {
         success: false,
-        error: { name: "LoginError", message: "Email and password are required." },
+        error: {
+          name: "LoginError",
+          message: translate("auth.emailRequired"),
+        },
       };
     }
 
@@ -35,7 +39,10 @@ export const authProvider: AuthProvider = {
     if (error || !data.user) {
       return {
         success: false,
-        error: authError("LoginError", error ?? { message: "Login failed." }),
+        error: authError(
+          "LoginError",
+          error ?? { message: translate("auth.loginFailed") },
+        ),
       };
     }
 
@@ -52,7 +59,7 @@ export const authProvider: AuthProvider = {
         success: false,
         error: {
           name: "LoginError",
-          message: "Your account is inactive. Contact an administrator.",
+          message: translate("auth.inactive"),
         },
       };
     }
@@ -83,7 +90,7 @@ export const authProvider: AuthProvider = {
         redirectTo: "/login",
         error: {
           name: "Unauthorized",
-          message: "You must be signed in to access this page.",
+          message: translate("auth.sessionRequired"),
         },
       };
     }
@@ -103,7 +110,7 @@ export const authProvider: AuthProvider = {
         redirectTo: "/login",
         error: {
           name: "Unauthorized",
-          message: "Your account is inactive. Contact an administrator.",
+          message: translate("auth.inactive"),
         },
       };
     }

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ColumnFilterBar } from "../../../components/ColumnFilterBar";
 import { type FilterCondition } from "../../../components/filtering";
+import { useI18n } from "../../../i18n/useI18n";
 import type { Category } from "../category.schema";
 import {
   CATEGORY_FILTER_COLUMNS,
@@ -15,6 +16,7 @@ import {
 
 export function CategoryList() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { tableProps, filters, setFilters, setCurrentPage } = useTable<
     Category,
     HttpError
@@ -44,16 +46,16 @@ export function CategoryList() {
 
   return (
     <List
-      title="Categories"
+      title={t("categories.listTitle")}
       headerButtons={
         <Space wrap>
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/products")}
           >
-            Back to products
+            {t("categories.backToProducts")}
           </Button>
-          <CreateButton>Create category</CreateButton>
+          <CreateButton>{t("categories.create")}</CreateButton>
         </Space>
       }
     >
@@ -65,10 +67,10 @@ export function CategoryList() {
         onClear={handleClear}
       />
 
-      <Table {...tableProps} rowKey="id">
-        <Table.Column dataIndex="name" title="Name" />
+      <Table {...tableProps} rowKey="id" scroll={{ x: "max-content" }}>
+        <Table.Column dataIndex="name" title={t("categories.columns.name")} />
         <Table.Column
-          title="Actions"
+          title={t("categories.columns.actions")}
           render={(_, record: Category) => (
             <Space>
               <EditButton hideText size="small" recordItemId={record.id} />

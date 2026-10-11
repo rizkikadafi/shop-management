@@ -4,7 +4,8 @@ import { Space, Table, Tag } from "antd";
 import { useState } from "react";
 import { ColumnFilterBar } from "../../../components/ColumnFilterBar";
 import { type FilterCondition } from "../../../components/filtering";
-import { ROLE_COLORS, type Profile } from "../user.schema";
+import { useI18n } from "../../../i18n/useI18n";
+import { ROLE_COLORS, ROLE_LABEL_KEYS, type Profile } from "../user.schema";
 import {
   USER_FILTER_COLUMNS,
   userConditionsToFilters,
@@ -12,6 +13,7 @@ import {
 } from "../user.filters";
 
 export function UserList() {
+  const { t } = useI18n();
   const { tableProps, filters, setFilters, setCurrentPage } = useTable<
     Profile,
     HttpError
@@ -41,8 +43,8 @@ export function UserList() {
 
   return (
     <List
-      title="Users"
-      headerButtons={<CreateButton>Create user</CreateButton>}
+      title={t("users.listTitle")}
+      headerButtons={<CreateButton>{t("users.create")}</CreateButton>}
     >
       <ColumnFilterBar
         columns={USER_FILTER_COLUMNS}
@@ -52,31 +54,31 @@ export function UserList() {
         onClear={handleClear}
       />
 
-      <Table {...tableProps} rowKey="id">
-        <Table.Column dataIndex="email" title="Email" />
+      <Table {...tableProps} rowKey="id" scroll={{ x: "max-content" }}>
+        <Table.Column dataIndex="email" title={t("users.columns.email")} />
         <Table.Column
           dataIndex="full_name"
-          title="Name"
-          render={(value: string | null) => value ?? "—"}
+          title={t("users.columns.name")}
+          render={(value: string | null) => value ?? t("common.none")}
         />
         <Table.Column
           dataIndex="role"
-          title="Role"
+          title={t("users.columns.role")}
           render={(role: Profile["role"]) => (
-            <Tag color={ROLE_COLORS[role]}>{role}</Tag>
+            <Tag color={ROLE_COLORS[role]}>{t(ROLE_LABEL_KEYS[role])}</Tag>
           )}
         />
         <Table.Column
           dataIndex="is_active"
-          title="Status"
+          title={t("users.columns.status")}
           render={(value: boolean) => (
             <Tag color={value ? "green" : "default"}>
-              {value ? "Active" : "Inactive"}
+              {value ? t("common.active") : t("common.inactive")}
             </Tag>
           )}
         />
         <Table.Column
-          title="Actions"
+          title={t("users.columns.actions")}
           render={(_, record: Profile) => (
             <Space>
               <EditButton hideText size="small" recordItemId={record.id} />

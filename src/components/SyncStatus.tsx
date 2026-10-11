@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Tag } from "antd";
+import { useI18n } from "../i18n/useI18n";
 
 /**
  * Connectivity indicator.
@@ -8,6 +9,7 @@ import { Tag } from "antd";
  * component will also surface pending/failed sync counts from the queue.
  */
 export function SyncStatus() {
+  const { t } = useI18n();
   const [online, setOnline] = useState(() => navigator.onLine);
 
   useEffect(() => {
@@ -24,17 +26,8 @@ export function SyncStatus() {
   }, []);
 
   return (
-    <Tag
-      color={online ? "green" : "orange"}
-      style={{
-        position: "fixed",
-        top: 18,
-        right: 24,
-        zIndex: 1000,
-        margin: 0,
-      }}
-    >
-      {online ? "Online" : "Offline"}
+    <Tag color={online ? "green" : "orange"} style={{ margin: 0 }}>
+      {online ? t("sync.online") : t("sync.offline")}
     </Tag>
   );
 }

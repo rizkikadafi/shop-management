@@ -3,15 +3,26 @@ import { Refine } from "@refinedev/core";
 import { RefineThemes, useNotificationProvider } from "@refinedev/antd";
 import routerProvider from "@refinedev/react-router";
 import { App as AntdApp, ConfigProvider } from "antd";
+import enUS from "antd/locale/en_US";
+import idID from "antd/locale/id_ID";
 
 import "@refinedev/antd/dist/reset.css";
 
 import { accessControlProvider } from "../auth/accessControlProvider";
 import { authProvider } from "../auth/authProvider";
 import { dataProvider } from "../data/refine/dataProvider";
+import { AppI18nProvider } from "../i18n/AppI18nProvider";
+import type { Locale } from "../i18n/config";
+import { useI18n } from "../i18n/useI18n";
+
+const ANTD_LOCALES: Record<Locale, typeof enUS> = {
+  en: enUS,
+  id: idID,
+};
 
 function RefineWithProviders({ children }: { children: ReactNode }) {
   const notificationProvider = useNotificationProvider();
+  const { i18nProvider, t } = useI18n();
 
   return (
     <Refine
@@ -20,6 +31,7 @@ function RefineWithProviders({ children }: { children: ReactNode }) {
       authProvider={authProvider}
       accessControlProvider={accessControlProvider}
       notificationProvider={notificationProvider}
+      i18nProvider={i18nProvider}
       resources={[
         {
           name: "products",
@@ -27,36 +39,36 @@ function RefineWithProviders({ children }: { children: ReactNode }) {
           create: "/products/create",
           edit: "/products/edit/:id",
           show: "/products/show/:id",
-          meta: { label: "Products" },
+          meta: { label: t("resources.products") },
         },
         {
           name: "categories",
           list: "/products/categories",
           create: "/products/categories/create",
           edit: "/products/categories/edit/:id",
-          meta: { label: "Categories", hide: true },
+          meta: { label: t("resources.categories"), hide: true },
         },
         {
           name: "uoms",
           list: "/products/uoms",
           create: "/products/uoms/create",
           edit: "/products/uoms/edit/:id",
-          meta: { label: "Units of Measure", hide: true },
+          meta: { label: t("resources.uoms"), hide: true },
         },
         {
           name: "product_uoms",
-          meta: { label: "Product UoMs", hide: true },
+          meta: { label: t("resources.productUoms"), hide: true },
         },
         {
           name: "product_prices",
-          meta: { label: "Product Prices", hide: true },
+          meta: { label: t("resources.productPrices"), hide: true },
         },
         {
           name: "profiles",
           list: "/users",
           create: "/users/create",
           edit: "/users/edit/:id",
-          meta: { label: "Users", hideIfUnauthorized: true },
+          meta: { label: t("resources.users"), hideIfUnauthorized: true },
         },
       ]}
       options={{ syncWithLocation: true, warnWhenUnsavedChanges: true }}
@@ -66,12 +78,22 @@ function RefineWithProviders({ children }: { children: ReactNode }) {
   );
 }
 
-export function AppProviders({ children }: { children: ReactNode }) {
+function ThemedApp({ children }: { children: ReactNode }) {
+  const { locale } = useI18n();
+
   return (
-    <ConfigProvider theme={RefineThemes.Blue}>
+    <ConfigProvider theme={RefineThemes.Blue} locale={ANTD_LOCALES[locale]}>
       <AntdApp>
         <RefineWithProviders>{children}</RefineWithProviders>
       </AntdApp>
     </ConfigProvider>
+  );
+}
+
+export function AppProviders({ children }: { children: ReactNode }) {
+  return (
+    <AppI18nProvider>
+      <ThemedApp>{children}</ThemedApp>
+    </AppI18nProvider>
   );
 }

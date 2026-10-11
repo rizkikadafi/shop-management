@@ -6,7 +6,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ColumnFilterBar } from "../../../components/ColumnFilterBar";
 import { type FilterCondition } from "../../../components/filtering";
-import { UOM_TYPE_COLORS, type Uom, type UomType } from "../uom.schema";
+import { useI18n } from "../../../i18n/useI18n";
+import {
+  UOM_TYPE_COLORS,
+  UOM_TYPE_LABEL_KEYS,
+  type Uom,
+  type UomType,
+} from "../uom.schema";
 import {
   UOM_FILTER_COLUMNS,
   uomConditionsToFilters,
@@ -15,6 +21,7 @@ import {
 
 export function UomList() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { tableProps, filters, setFilters, setCurrentPage } = useTable<
     Uom,
     HttpError
@@ -44,16 +51,16 @@ export function UomList() {
 
   return (
     <List
-      title="Units of Measure"
+      title={t("uoms.listTitle")}
       headerButtons={
         <Space wrap>
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/products")}
           >
-            Back to products
+            {t("uoms.backToProducts")}
           </Button>
-          <CreateButton>Create unit</CreateButton>
+          <CreateButton>{t("uoms.create")}</CreateButton>
         </Space>
       }
     >
@@ -65,18 +72,20 @@ export function UomList() {
         onClear={handleClear}
       />
 
-      <Table {...tableProps} rowKey="id">
-        <Table.Column dataIndex="name" title="Name" />
-        <Table.Column dataIndex="symbol" title="Symbol" />
+      <Table {...tableProps} rowKey="id" scroll={{ x: "max-content" }}>
+        <Table.Column dataIndex="name" title={t("uoms.columns.name")} />
+        <Table.Column dataIndex="symbol" title={t("uoms.columns.symbol")} />
         <Table.Column
           dataIndex="uom_type"
-          title="Type"
+          title={t("uoms.columns.type")}
           render={(value: UomType) => (
-            <Tag color={UOM_TYPE_COLORS[value]}>{value}</Tag>
+            <Tag color={UOM_TYPE_COLORS[value]}>
+              {t(UOM_TYPE_LABEL_KEYS[value])}
+            </Tag>
           )}
         />
         <Table.Column
-          title="Actions"
+          title={t("uoms.columns.actions")}
           render={(_, record: Uom) => (
             <Space>
               <EditButton hideText size="small" recordItemId={record.id} />

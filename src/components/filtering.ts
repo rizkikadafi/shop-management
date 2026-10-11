@@ -3,15 +3,15 @@ import type { CrudFilter } from "@refinedev/core";
 export type FilterColumnType = "text" | "select" | "numberRange" | "dateRange";
 
 export interface FilterSelectOption {
-  label: string;
+  labelKey: string;
   value: string | number | boolean;
 }
 
 export interface FilterColumnDef {
   key: string;
-  label: string;
+  labelKey: string;
   type: FilterColumnType;
-  placeholder?: string;
+  placeholderKey?: string;
   options?: FilterSelectOption[];
   /** Column value -> zero or more Refine filters (empty value returns []). */
   toFilters: (value: unknown) => CrudFilter[];

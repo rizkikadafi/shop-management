@@ -12,7 +12,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ColumnFilterBar } from "../../../components/ColumnFilterBar";
 import { type FilterCondition } from "../../../components/filtering";
-import { normalizePrice, type Product } from "../product.schema";
+import { useI18n } from "../../../i18n/useI18n";
+import { type Product } from "../product.schema";
 import { ProductSoftDeleteButton } from "../components/ProductSoftDeleteButton";
 import {
   PRODUCT_FILTER_COLUMNS,
@@ -27,6 +28,7 @@ type ProductRow = Product & {
 
 export function ProductList() {
   const navigate = useNavigate();
+  const { t, formatCurrency } = useI18n();
   const { tableProps, filters, setFilters, setCurrentPage } = useTable<
     Product,
     HttpError
@@ -62,22 +64,22 @@ export function ProductList() {
 
   return (
     <List
-      title="Products"
+      title={t("products.listTitle")}
       headerButtons={
         <Space wrap>
           <Button
             icon={<AppstoreOutlined />}
             onClick={() => navigate("/products/categories")}
           >
-            Categories
+            {t("resources.categories")}
           </Button>
           <Button
             icon={<ExperimentOutlined />}
             onClick={() => navigate("/products/uoms")}
           >
-            Units of Measure
+            {t("resources.uoms")}
           </Button>
-          <CreateButton>Create product</CreateButton>
+          <CreateButton>{t("products.create")}</CreateButton>
         </Space>
       }
     >
@@ -89,9 +91,9 @@ export function ProductList() {
         onClear={handleClear}
       />
 
-      <Table {...tableProps} rowKey="id">
+      <Table {...tableProps} rowKey="id" scroll={{ x: "max-content" }}>
         <Table.Column
-          title="Actions"
+          title={t("products.columns.actions")}
           render={(_, record: ProductRow) => (
             <Space>
               <ShowButton hideText size="small" recordItemId={record.id} />
@@ -104,36 +106,38 @@ export function ProductList() {
             </Space>
           )}
         />
-        <Table.Column dataIndex="name" title="Name" />
+        <Table.Column dataIndex="name" title={t("products.columns.name")} />
         <Table.Column
           dataIndex="sku"
-          title="SKU"
-          render={(value: string | null) => value ?? "—"}
+          title={t("products.columns.sku")}
+          render={(value: string | null) => value ?? t("common.none")}
         />
         <Table.Column
-          title="Category"
-          render={(_, record: ProductRow) => record.category?.name ?? "—"}
+          title={t("products.columns.category")}
+          render={(_, record: ProductRow) =>
+            record.category?.name ?? t("common.none")
+          }
         />
         <Table.Column
-          title="Base UoM"
+          title={t("products.columns.baseUom")}
           render={(_, record: ProductRow) =>
             record.base_uom
               ? `${record.base_uom.name} (${record.base_uom.symbol ?? ""})`
-              : "—"
+              : t("common.none")
           }
         />
         <Table.Column
           dataIndex="price"
-          title="Price"
+          title={t("products.columns.price")}
           align="right"
-          render={(value: number | string) => normalizePrice(value).toFixed(2)}
+          render={(value: number | string) => formatCurrency(value)}
         />
         <Table.Column
           dataIndex="is_active"
-          title="Status"
+          title={t("products.columns.status")}
           render={(value: boolean) => (
             <Tag color={value ? "green" : "default"}>
-              {value ? "Active" : "Inactive"}
+              {value ? t("common.active") : t("common.inactive")}
             </Tag>
           )}
         />

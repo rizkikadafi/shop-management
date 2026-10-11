@@ -3,6 +3,7 @@ import { Button, Space, Table, Tag } from "antd";
 import { EditOutlined, TagsOutlined } from "@ant-design/icons";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
+import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
 
 type ProductPrice = Database["public"]["Tables"]["product_prices"]["Row"];
@@ -22,13 +23,9 @@ function formatQty(value: number | string): string {
   return Number.isFinite(parsed) ? parsed.toString() : String(value);
 }
 
-function formatPrice(value: number | string): string {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed.toFixed(2) : String(value);
-}
-
 export function ProductPricesTable({ productId }: ProductPricesTableProps) {
   const navigate = useNavigate();
+  const { t, formatCurrency } = useI18n();
   const { data: canEditData } = useCan({
     resource: "products",
     action: "edit",
@@ -67,23 +64,24 @@ export function ProductPricesTable({ productId }: ProductPricesTableProps) {
       loading={isLoading}
       dataSource={rows}
       pagination={false}
+      scroll={{ x: "max-content" }}
       title={() => (
         <Space style={{ width: "100%", justifyContent: "space-between" }}>
-          <span>Price Rules</span>
+          <span>{t("productPrices.title")}</span>
           {canEdit && (
             <Button
               size="small"
               icon={<EditOutlined />}
               onClick={() => navigate(`/products/edit/${productId}`)}
             >
-              Edit units &amp; prices
+              {t("productPrices.editUnits")}
             </Button>
           )}
         </Space>
       )}
     >
       <Table.Column<ProductPrice>
-        title="Unit"
+        title={t("productPrices.unit")}
         render={(_, row) => {
           const productUom = uomById.get(row.product_uom_id);
           return productUom?.uom
@@ -92,7 +90,7 @@ export function ProductPricesTable({ productId }: ProductPricesTableProps) {
         }}
       />
       <Table.Column<ProductPrice>
-        title="Price list"
+        title={t("productPrices.priceList")}
         render={(_, row) => (
           <Tag icon={<TagsOutlined />} color="blue">
             {row.price_list}
@@ -100,14 +98,14 @@ export function ProductPricesTable({ productId }: ProductPricesTableProps) {
         )}
       />
       <Table.Column<ProductPrice>
-        title="Min qty"
+        title={t("productPrices.minQty")}
         align="right"
         render={(_, row) => formatQty(row.min_quantity)}
       />
       <Table.Column<ProductPrice>
-        title="Price"
+        title={t("productPrices.price")}
         align="right"
-        render={(_, row) => formatPrice(row.package_price)}
+        render={(_, row) => formatCurrency(row.package_price)}
       />
     </Table>
   );

@@ -1,11 +1,18 @@
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import type { HttpError } from "@refinedev/core";
 import { Divider, Form, Input, InputNumber, Select, Space, Switch } from "antd";
-import { toUpdate, type Product, type ProductFormValues } from "../product.schema";
+import { useI18n } from "../../../i18n/useI18n";
+import {
+  PRODUCT_LIMITS,
+  toUpdate,
+  type Product,
+  type ProductFormValues,
+} from "../product.schema";
 import { ProductUomsPanel } from "../components/ProductUomsPanel";
 import { ProductPricesPanel } from "../components/ProductPricesPanel";
 
 export function ProductEdit() {
+  const { t, currencySymbol } = useI18n();
   const { formProps, saveButtonProps, onFinish, query } = useForm<
     Product,
     HttpError,
@@ -35,43 +42,61 @@ export function ProductEdit() {
     <Edit saveButtonProps={saveButtonProps}>
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
-          label="Name"
+          label={t("products.form.name")}
           name="name"
           rules={[
-            { required: true, message: "Name is required." },
-            { max: 200, message: "Name must be 200 characters or fewer." },
+            { required: true, message: t("products.validation.nameRequired") },
+            {
+              max: PRODUCT_LIMITS.name,
+              message: t("products.validation.nameMax", {
+                max: PRODUCT_LIMITS.name,
+              }),
+            },
           ]}
         >
-          <Input placeholder="Product name" />
+          <Input placeholder={t("products.form.namePlaceholder")} />
         </Form.Item>
 
         <Form.Item
-          label="SKU"
+          label={t("products.form.sku")}
           name="sku"
-          rules={[{ max: 64, message: "SKU must be 64 characters or fewer." }]}
+          rules={[
+            {
+              max: PRODUCT_LIMITS.sku,
+              message: t("products.validation.skuMax", { max: PRODUCT_LIMITS.sku }),
+            },
+          ]}
         >
-          <Input placeholder="Optional stock keeping unit" />
+          <Input placeholder={t("products.form.skuPlaceholder")} />
         </Form.Item>
 
         <Form.Item
-          label="Description"
+          label={t("products.form.description")}
           name="description"
           rules={[
-            { max: 2000, message: "Description must be 2000 characters or fewer." },
+            {
+              max: PRODUCT_LIMITS.description,
+              message: t("products.validation.descriptionMax", {
+                max: PRODUCT_LIMITS.description,
+              }),
+            },
           ]}
         >
-          <Input.TextArea rows={3} placeholder="Optional description" />
+          <Input.TextArea
+            rows={3}
+            placeholder={t("products.form.descriptionPlaceholder")}
+          />
         </Form.Item>
 
         <Form.Item
-          label="Price"
+          label={t("products.form.price")}
           name="price"
           rules={[
-            { required: true, message: "Price is required." },
+            { required: true, message: t("products.validation.priceRequired") },
             {
               type: "number",
               min: 0,
-              message: "Price must be zero or greater.",
+              message: t("products.validation.priceMin"),
             },
           ]}
         >
@@ -80,23 +105,37 @@ export function ProductEdit() {
             step={0.01}
             precision={2}
             style={{ width: "100%" }}
-            addonBefore="$"
+            addonBefore={currencySymbol}
           />
         </Form.Item>
 
-        <Form.Item label="Category" name="category_id">
-          <Select allowClear placeholder="Select a category" {...categorySelectProps} />
+        <Form.Item label={t("products.form.category")} name="category_id">
+          <Select
+            allowClear
+            placeholder={t("products.form.categoryPlaceholder")}
+            {...categorySelectProps}
+          />
         </Form.Item>
 
         <Form.Item
-          label="Base Unit of Measure"
+          label={t("products.form.baseUom")}
           name="base_uom_id"
-          rules={[{ required: true, message: "Base unit is required." }]}
+          rules={[
+            { required: true, message: t("products.validation.baseUomRequired") },
+          ]}
         >
-          <Select showSearch placeholder="Select the base unit" {...uomSelectProps} />
+          <Select
+            showSearch
+            placeholder={t("products.form.baseUomPlaceholder")}
+            {...uomSelectProps}
+          />
         </Form.Item>
 
-        <Form.Item label="Active" name="is_active" valuePropName="checked">
+        <Form.Item
+          label={t("products.form.active")}
+          name="is_active"
+          valuePropName="checked"
+        >
           <Switch />
         </Form.Item>
       </Form>

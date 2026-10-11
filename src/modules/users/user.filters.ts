@@ -20,9 +20,9 @@ function findFilter(
 export const USER_FILTER_COLUMNS: FilterColumnDef[] = [
   {
     key: "email",
-    label: "Email",
+    labelKey: "users.columns.email",
     type: "text",
-    placeholder: "Email",
+    placeholderKey: "users.columns.email",
     toFilters: (value) => {
       const text = typeof value === "string" ? value.trim() : "";
       return text ? [{ field: "email", operator: "contains", value: text }] : [];
@@ -34,9 +34,9 @@ export const USER_FILTER_COLUMNS: FilterColumnDef[] = [
   },
   {
     key: "full_name",
-    label: "Name",
+    labelKey: "users.columns.name",
     type: "text",
-    placeholder: "Full name",
+    placeholderKey: "users.form.fullName",
     toFilters: (value) => {
       const text = typeof value === "string" ? value.trim() : "";
       return text
@@ -50,7 +50,7 @@ export const USER_FILTER_COLUMNS: FilterColumnDef[] = [
   },
   {
     key: "role",
-    label: "Role",
+    labelKey: "users.columns.role",
     type: "select",
     options: ROLES,
     toFilters: (value) =>
@@ -64,11 +64,11 @@ export const USER_FILTER_COLUMNS: FilterColumnDef[] = [
   },
   {
     key: "is_active",
-    label: "Status",
+    labelKey: "common.status",
     type: "select",
     options: [
-      { label: "Active", value: true },
-      { label: "Inactive", value: false },
+      { labelKey: "common.active", value: true },
+      { labelKey: "common.inactive", value: false },
     ],
     toFilters: (value) =>
       typeof value === "boolean"

@@ -9,6 +9,7 @@ import {
 import { Button, Form, InputNumber, Modal, Popconfirm, Select, Space, Table, Tag } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useMemo, useState } from "react";
+import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
 import type { Uom } from "../../uoms/uom.schema";
 
@@ -30,6 +31,7 @@ interface ProductUomsPanelProps {
 }
 
 export function ProductUomsPanel({ productId, baseUomId }: ProductUomsPanelProps) {
+  const { t } = useI18n();
   const { open } = useNotification();
   const { data: canWriteData } = useCan({
     resource: "product_uoms",
@@ -121,8 +123,8 @@ export function ProductUomsPanel({ productId, baseUomId }: ProductUomsPanelProps
     if (!isBase && !parent) {
       open?.({
         type: "error",
-        message: "Parent unit required",
-        description: "A non-base unit needs at least one parent unit.",
+        message: t("productUnits.parentRequired"),
+        description: t("productUnits.parentRequiredDescription"),
       });
       return;
     }
@@ -138,8 +140,8 @@ export function ProductUomsPanel({ productId, baseUomId }: ProductUomsPanelProps
           invalidates: ["list"],
           successNotification: {
             type: "success",
-            message: "Unit updated",
-            description: "The product unit was updated.",
+            message: t("productUnits.updated"),
+            description: t("productUnits.updatedDescription"),
           },
         },
         { onSuccess: () => setModalOpen(false) },
@@ -159,8 +161,8 @@ export function ProductUomsPanel({ productId, baseUomId }: ProductUomsPanelProps
         invalidates: ["list"],
         successNotification: {
           type: "success",
-          message: "Unit added",
-          description: "The product unit was added.",
+          message: t("productUnits.added"),
+          description: t("productUnits.addedDescription"),
         },
       },
       {
@@ -180,8 +182,8 @@ export function ProductUomsPanel({ productId, baseUomId }: ProductUomsPanelProps
         invalidates: ["list"],
         successNotification: {
           type: "success",
-          message: "Unit removed",
-          description: "The product unit was removed.",
+          message: t("productUnits.removed"),
+          description: t("productUnits.removedDescription"),
         },
       },
       { onError: () => refetch() },
@@ -195,9 +197,10 @@ export function ProductUomsPanel({ productId, baseUomId }: ProductUomsPanelProps
         loading={isLoading}
         dataSource={rows}
         pagination={false}
+        scroll={{ x: "max-content" }}
         title={() => (
           <Space style={{ width: "100%", justifyContent: "space-between" }}>
-            <span>Units of Measure</span>
+            <span>{t("productUnits.title")}</span>
             {canWrite && (
               <Button
                 type="primary"
@@ -205,51 +208,53 @@ export function ProductUomsPanel({ productId, baseUomId }: ProductUomsPanelProps
                 icon={<PlusOutlined />}
                 onClick={openCreate}
               >
-                Add unit
+                {t("productUnits.add")}
               </Button>
             )}
           </Space>
         )}
       >
         <Table.Column<ProductUomRow>
-          title="Unit"
+          title={t("productUnits.unit")}
           render={(_, row) => (
             <Space>
               {row.uom ? `${row.uom.name} (${row.uom.symbol ?? ""})` : row.uom_id}
-              {isBaseRow(row) && <Tag color="green">Base</Tag>}
+              {isBaseRow(row) && (
+                <Tag color="green">{t("productUnits.base")}</Tag>
+              )}
             </Space>
           )}
         />
         <Table.Column<ProductUomRow>
-          title="Parent"
+          title={t("productUnits.parent")}
           render={(_, row) => {
             const parent = row.parent_product_uom_id
               ? rowsById.get(row.parent_product_uom_id)
               : undefined;
             return parent?.uom
               ? `${parent.uom.name} (${parent.uom.symbol ?? ""})`
-              : "—";
+              : t("common.none");
           }}
         />
         <Table.Column<ProductUomRow>
-          title="Quantity in parent"
+          title={t("productUnits.quantityInParent")}
           align="right"
           dataIndex="quantity_in_parent"
         />
         <Table.Column<ProductUomRow>
-          title="Actions"
+          title={t("productUnits.actions")}
           render={(_, row) =>
             isBaseRow(row) || !canWrite ? null : (
               <Space>
                 <Button size="small" onClick={() => openEdit(row)}>
-                  Edit
+                  {t("common.edit")}
                 </Button>
                 <Popconfirm
-                  title="Remove this unit?"
+                  title={t("productUnits.removeConfirm")}
                   onConfirm={() => handleDelete(row)}
                 >
                   <Button size="small" danger>
-                    Remove
+                    {t("common.remove")}
                   </Button>
                 </Popconfirm>
               </Space>
@@ -259,39 +264,48 @@ export function ProductUomsPanel({ productId, baseUomId }: ProductUomsPanelProps
       </Table>
 
       <Modal
-        title={editing ? "Edit unit" : "Add unit"}
+        title={editing ? t("productUnits.edit") : t("productUnits.add")}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={() => form.submit()}
         destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>
-          <Form.Item label="Unit" name="uom_id" rules={[{ required: true }]}>
+          <Form.Item
+            label={t("productUnits.unit")}
+            name="uom_id"
+            rules={[{ required: true }]}
+          >
             <Select
               showSearch
               disabled={Boolean(editing)}
-              placeholder="Select a unit"
+              placeholder={t("productUnits.unitPlaceholder")}
               options={availableUomOptions}
             />
           </Form.Item>
-          <Form.Item label="Parent unit" name="parent_product_uom_id">
+          <Form.Item
+            label={t("productUnits.parentUnit")}
+            name="parent_product_uom_id"
+          >
             <Select
               allowClear
               placeholder={
-                editing?.uom_id === baseUomId ? "Base unit has no parent" : "Optional"
+                editing?.uom_id === baseUomId
+                  ? t("productUnits.basePlaceholder")
+                  : t("productUnits.optionalPlaceholder")
               }
               options={parentOptions}
             />
           </Form.Item>
           <Form.Item
-            label="Quantity in parent"
+            label={t("productUnits.quantityInParent")}
             name="quantity_in_parent"
             rules={[
-              { required: true, message: "Quantity is required." },
+              { required: true, message: t("productUnits.quantityRequired") },
               {
                 type: "number",
                 min: 0.000001,
-                message: "Quantity must be greater than zero.",
+                message: t("productUnits.quantityMin"),
               },
             ]}
           >

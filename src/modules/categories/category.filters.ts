@@ -19,9 +19,9 @@ function findFilter(
 export const CATEGORY_FILTER_COLUMNS: FilterColumnDef[] = [
   {
     key: "name",
-    label: "Name",
+    labelKey: "categories.columns.name",
     type: "text",
-    placeholder: "Category name",
+    placeholderKey: "categories.form.namePlaceholder",
     toFilters: (value) => {
       const text = typeof value === "string" ? value.trim() : "";
       return text ? [{ field: "name", operator: "contains", value: text }] : [];
