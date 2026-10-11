@@ -1,7 +1,7 @@
-import { Button, DatePicker, Input, InputNumber, Select, Space } from "antd";
+import { Button, Select, Space } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import type { Dayjs } from "dayjs";
 import { useI18n } from "../i18n/useI18n";
+import { FilterValueControl } from "./columnFilters";
 import type { FilterColumnDef, FilterCondition } from "./filtering";
 
 interface ColumnFilterBarProps {
@@ -108,82 +108,5 @@ export function ColumnFilterBar({
         <Button onClick={onClear}>{t("filters.clear")}</Button>
       </Space>
     </Space>
-  );
-}
-
-interface FilterValueControlProps {
-  def: FilterColumnDef;
-  value: unknown;
-  onChange: (value: unknown) => void;
-  onSubmit: () => void;
-}
-
-function FilterValueControl({
-  def,
-  value,
-  onChange,
-  onSubmit,
-}: FilterValueControlProps) {
-  const { t } = useI18n();
-
-  if (def.type === "text") {
-    return (
-      <Input
-        style={{ width: 220 }}
-        allowClear
-        placeholder={def.placeholderKey ? t(def.placeholderKey) : undefined}
-        value={(value as string) ?? ""}
-        onChange={(event) => onChange(event.target.value)}
-        onPressEnter={onSubmit}
-      />
-    );
-  }
-
-  if (def.type === "select") {
-    return (
-      <Select
-        style={{ minWidth: 160 }}
-        allowClear
-        placeholder={def.placeholderKey ? t(def.placeholderKey) : t("common.any")}
-        options={def.options?.map((option) => ({
-          label: t(option.labelKey),
-          value: option.value,
-        }))}
-        value={value as string | number | boolean | undefined}
-        onChange={onChange}
-      />
-    );
-  }
-
-  if (def.type === "numberRange") {
-    const [min, max] = (value as [number | null, number | null]) ?? [
-      null,
-      null,
-    ];
-    return (
-      <Space>
-        <InputNumber
-          min={0}
-          placeholder={t("common.min")}
-          style={{ width: 110 }}
-          value={min ?? null}
-          onChange={(next) => onChange([next ?? null, max ?? null])}
-        />
-        <InputNumber
-          min={0}
-          placeholder={t("common.max")}
-          style={{ width: 110 }}
-          value={max ?? null}
-          onChange={(next) => onChange([min ?? null, next ?? null])}
-        />
-      </Space>
-    );
-  }
-
-  return (
-    <DatePicker.RangePicker
-      value={(value as [Dayjs, Dayjs] | null) ?? null}
-      onChange={(next) => onChange(next)}
-    />
   );
 }

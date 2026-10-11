@@ -5,6 +5,7 @@ import {
   filtersToConditions,
   type FilterColumnDef,
   type FilterCondition,
+  type FilterSelectOption,
 } from "../../components/filtering";
 
 function findFilter(
@@ -119,6 +120,54 @@ export const PRODUCT_FILTER_COLUMNS: FilterColumnDef[] = [
     },
   },
 ];
+
+export function categoryFilterColumn(
+  options: FilterSelectOption[],
+): FilterColumnDef {
+  return {
+    key: "category_id",
+    labelKey: "products.columns.category",
+    type: "select",
+    multiple: true,
+    options,
+    toFilters: (value) =>
+      Array.isArray(value) && value.length > 0
+        ? [{ field: "category_id", operator: "in", value }]
+        : [],
+    fromFilters: (filters) => {
+      const inFilter = findFilter(filters, "category_id", "in");
+      if (inFilter && Array.isArray(inFilter.value)) {
+        return inFilter.value.map(String);
+      }
+      const eqFilter = findFilter(filters, "category_id", "eq");
+      return eqFilter ? [String(eqFilter.value)] : undefined;
+    },
+  };
+}
+
+export function baseUomFilterColumn(
+  options: FilterSelectOption[],
+): FilterColumnDef {
+  return {
+    key: "base_uom_id",
+    labelKey: "products.columns.baseUom",
+    type: "select",
+    multiple: true,
+    options,
+    toFilters: (value) =>
+      Array.isArray(value) && value.length > 0
+        ? [{ field: "base_uom_id", operator: "in", value }]
+        : [],
+    fromFilters: (filters) => {
+      const inFilter = findFilter(filters, "base_uom_id", "in");
+      if (inFilter && Array.isArray(inFilter.value)) {
+        return inFilter.value.map(String);
+      }
+      const eqFilter = findFilter(filters, "base_uom_id", "eq");
+      return eqFilter ? [String(eqFilter.value)] : undefined;
+    },
+  };
+}
 
 export function productConditionsToFilters(
   conditions: FilterCondition[],

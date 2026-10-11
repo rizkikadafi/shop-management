@@ -3,7 +3,10 @@ import type { CrudFilter } from "@refinedev/core";
 export type FilterColumnType = "text" | "select" | "numberRange" | "dateRange";
 
 export interface FilterSelectOption {
-  labelKey: string;
+  /** Translation key for a static label. */
+  labelKey?: string;
+  /** Literal label for dynamic data (e.g. a category name). Takes precedence. */
+  label?: string;
   value: string | number | boolean;
 }
 
@@ -13,6 +16,8 @@ export interface FilterColumnDef {
   type: FilterColumnType;
   placeholderKey?: string;
   options?: FilterSelectOption[];
+  /** Render a multi-select and emit a single `in` filter. */
+  multiple?: boolean;
   /** Column value -> zero or more Refine filters (empty value returns []). */
   toFilters: (value: unknown) => CrudFilter[];
   /** Active Refine filters -> column value, or undefined when the column is unused. */

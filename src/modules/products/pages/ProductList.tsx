@@ -5,20 +5,19 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
-import type { HttpError } from "@refinedev/core";
+import { useList, type HttpError } from "@refinedev/core";
 import { Button, Space, Table, Tag } from "antd";
 import { AppstoreOutlined, ExperimentOutlined } from "@ant-design/icons";
-import { useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import { ColumnFilterBar } from "../../../components/ColumnFilterBar";
-import { type FilterCondition } from "../../../components/filtering";
+import { createColumnFilter } from "../../../components/columnFilterProps";
 import { useI18n } from "../../../i18n/useI18n";
 import { type Product } from "../product.schema";
 import { ProductSoftDeleteButton } from "../components/ProductSoftDeleteButton";
 import {
+  baseUomFilterColumn,
+  categoryFilterColumn,
   PRODUCT_FILTER_COLUMNS,
-  productConditionsToFilters,
-  productFiltersToConditions,
 } from "../product.filters";
 
 type ProductRow = Product & {
@@ -47,50 +46,50 @@ export function ProductList() {
     },
   });
 
-  const [conditions, setConditions] = useState<FilterCondition[]>(() =>
-    filters.length > 0 ? productFiltersToConditions(filters) : [],
+  const categoriesQuery = useList<{ id: string; name: string }>({
+    resource: "categories",
+    pagination: { mode: "off" },
+    sorters: [{ field: "name", order: "asc" }],
+  });
+  const uomsQuery = useList<{ id: string; name: string; symbol: string | null }>({
+    resource: "uoms",
+    pagination: { mode: "off" },
+    sorters: [{ field: "name", order: "asc" }],
+  });
+
+  const filterColumns = useMemo(
+    () => [
+      ...PRODUCT_FILTER_COLUMNS,
+      categoryFilterColumn(
+        (categoriesQuery.result.data ?? []).map((category) => ({
+          label: category.name,
+          value: category.id,
+        })),
+      ),
+      baseUomFilterColumn(
+        (uomsQuery.result.data ?? []).map((uom) => ({
+          label: uom.symbol ? `${uom.name} (${uom.symbol})` : uom.name,
+          value: uom.id,
+        })),
+      ),
+    ],
+    [categoriesQuery.result.data, uomsQuery.result.data],
   );
 
-  const handleSubmit = () => {
-    setFilters(productConditionsToFilters(conditions));
-    setCurrentPage(1);
-  };
-
-  const handleClear = () => {
-    setConditions([]);
-    setFilters([]);
-    setCurrentPage(1);
-  };
+  const filterProps = createColumnFilter(
+    filterColumns,
+    filters,
+    setFilters,
+    setCurrentPage,
+  );
 
   return (
     <List
       title={t("products.listTitle")}
       headerButtons={
-        <Space wrap>
-          <Button
-            icon={<AppstoreOutlined />}
-            onClick={() => navigate("/products/categories")}
-          >
-            {t("resources.categories")}
-          </Button>
-          <Button
-            icon={<ExperimentOutlined />}
-            onClick={() => navigate("/products/uoms")}
-          >
-            {t("resources.uoms")}
-          </Button>
-          <CreateButton>{t("products.create")}</CreateButton>
-        </Space>
+        <CreateButton>{t("products.create")}</CreateButton>
       }
     >
-      <ColumnFilterBar
-        columns={PRODUCT_FILTER_COLUMNS}
-        value={conditions}
-        onChange={setConditions}
-        onSubmit={handleSubmit}
-        onClear={handleClear}
-      />
-
       <Table {...tableProps} rowKey="id" scroll={{ x: "max-content" }}>
         <Table.Column
           title={t("products.columns.actions")}
@@ -106,31 +105,41 @@ export function ProductList() {
             </Space>
           )}
         />
-        <Table.Column dataIndex="name" title={t("products.columns.name")} />
+        <Table.Column
+          dataIndex="name"
+          title={t("products.columns.name")}
+          {...filterProps("name")}
+        />
         <Table.Column
           dataIndex="sku"
           title={t("products.columns.sku")}
           render={(value: string | null) => value ?? t("common.none")}
+          {...filterProps("sku")}
         />
         <Table.Column
+          dataIndex="category_id"
           title={t("products.columns.category")}
           render={(_, record: ProductRow) =>
             record.category?.name ?? t("common.none")
           }
+          {...filterProps("category_id")}
         />
         <Table.Column
+          dataIndex="base_uom_id"
           title={t("products.columns.baseUom")}
           render={(_, record: ProductRow) =>
             record.base_uom
               ? `${record.base_uom.name} (${record.base_uom.symbol ?? ""})`
               : t("common.none")
           }
+          {...filterProps("base_uom_id")}
         />
         <Table.Column
           dataIndex="price"
           title={t("products.columns.price")}
           align="right"
           render={(value: number | string) => formatCurrency(value)}
+          {...filterProps("price")}
         />
         <Table.Column
           dataIndex="is_active"
@@ -140,6 +149,7 @@ export function ProductList() {
               {value ? t("common.active") : t("common.inactive")}
             </Tag>
           )}
+          {...filterProps("is_active")}
         />
       </Table>
     </List>
