@@ -1,11 +1,10 @@
 import { Create, useForm } from "@refinedev/antd";
 import type { HttpError } from "@refinedev/core";
-import { Form, Input } from "antd";
-import { useI18n } from "../../../i18n/useI18n";
-import { CATEGORY_LIMITS, toInsert, type Category, type CategoryFormValues } from "../category.schema";
+import { Form } from "antd";
+import { toInsert, type Category, type CategoryFormValues } from "../category.schema";
+import { CategoryFormFields } from "../components/CategoryFormFields";
 
 export function CategoryCreate() {
-  const { t } = useI18n();
   const { formProps, saveButtonProps, onFinish } = useForm<
     Category,
     HttpError,
@@ -23,21 +22,7 @@ export function CategoryCreate() {
   return (
     <Create saveButtonProps={saveButtonProps}>
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
-        <Form.Item
-          label={t("categories.form.name")}
-          name="name"
-          rules={[
-            { required: true, message: t("categories.validation.nameRequired") },
-            {
-              max: CATEGORY_LIMITS.name,
-              message: t("categories.validation.nameMax", {
-                max: CATEGORY_LIMITS.name,
-              }),
-            },
-          ]}
-        >
-          <Input placeholder={t("categories.form.namePlaceholder")} />
-        </Form.Item>
+        <CategoryFormFields />
       </Form>
     </Create>
   );

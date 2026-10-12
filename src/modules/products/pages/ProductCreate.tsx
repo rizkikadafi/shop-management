@@ -1,7 +1,18 @@
 import { Create, useForm, useSelect } from "@refinedev/antd";
-import { useGetIdentity, type HttpError } from "@refinedev/core";
-import { Form, Input, InputNumber, Select, Switch } from "antd";
+import { useCan, useGetIdentity, type HttpError } from "@refinedev/core";
+import { Form, Input, InputNumber, Switch } from "antd";
 import { useI18n } from "../../../i18n/useI18n";
+import { QuickCreateSelect } from "../../../components/QuickCreateSelect";
+import {
+  toInsert as toCategoryInsert,
+  type CategoryFormValues,
+} from "../../categories/category.schema";
+import { CategoryFormFields } from "../../categories/components/CategoryFormFields";
+import {
+  toInsert as toUomInsert,
+  type UomFormValues,
+} from "../../uoms/uom.schema";
+import { UomFormFields } from "../../uoms/components/UomFormFields";
 import {
   PRODUCT_LIMITS,
   toInsert,
@@ -21,15 +32,23 @@ export function ProductCreate() {
     redirect: "show",
   });
   const { data: identity } = useGetIdentity<{ id: string }>();
-  const { selectProps: categorySelectProps } = useSelect({
+  const { selectProps: categorySelectProps, query: categoryQuery } = useSelect({
     resource: "categories",
     optionLabel: "name",
     optionValue: "id",
   });
-  const { selectProps: uomSelectProps } = useSelect({
+  const { selectProps: uomSelectProps, query: uomQuery } = useSelect({
     resource: "uoms",
     optionLabel: "name",
     optionValue: "id",
+  });
+  const { data: categoryCanCreate } = useCan({
+    resource: "categories",
+    action: "create",
+  });
+  const { data: uomCanCreate } = useCan({
+    resource: "uoms",
+    action: "create",
   });
 
   const handleFinish = (values: ProductFormValues) => {
@@ -118,10 +137,19 @@ export function ProductCreate() {
         </Form.Item>
 
         <Form.Item label={t("products.form.category")} name="category_id">
-          <Select
+          <QuickCreateSelect<CategoryFormValues>
+            {...categorySelectProps}
             allowClear
             placeholder={t("products.form.categoryPlaceholder")}
-            {...categorySelectProps}
+            resource="categories"
+            fieldName="category_id"
+            canCreate={categoryCanCreate?.can ?? false}
+            modalTitle={t("categories.create")}
+            createLabel={t("categories.quickCreate")}
+            fields={<CategoryFormFields />}
+            prefill={(search) => ({ name: search })}
+            toValues={(values) => toCategoryInsert(values)}
+            onRefetch={categoryQuery.refetch}
           />
         </Form.Item>
 
@@ -132,10 +160,19 @@ export function ProductCreate() {
             { required: true, message: t("products.validation.baseUomRequired") },
           ]}
         >
-          <Select
-            showSearch
-            placeholder={t("products.form.baseUomPlaceholder")}
+          <QuickCreateSelect<UomFormValues>
             {...uomSelectProps}
+            placeholder={t("products.form.baseUomPlaceholder")}
+            resource="uoms"
+            fieldName="base_uom_id"
+            canCreate={uomCanCreate?.can ?? false}
+            modalTitle={t("uoms.create")}
+            createLabel={t("uoms.quickCreate")}
+            fields={<UomFormFields />}
+            defaults={{ uom_type: "unit" }}
+            prefill={(search) => ({ name: search })}
+            toValues={(values) => toUomInsert(values)}
+            onRefetch={uomQuery.refetch}
           />
         </Form.Item>
 
