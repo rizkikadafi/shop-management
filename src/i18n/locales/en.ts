@@ -160,6 +160,7 @@ export const en = {
   categories: {
     listTitle: "Categories",
     create: "Create category",
+    quickCreate: "Create new category",
     backToProducts: "Back to products",
     columns: {
       name: "Name",
@@ -177,6 +178,7 @@ export const en = {
   uoms: {
     listTitle: "Units of Measure",
     create: "Create unit",
+    quickCreate: "Create new unit",
     backToProducts: "Back to products",
     columns: {
       name: "Name",

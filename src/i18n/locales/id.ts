@@ -162,6 +162,7 @@ export const id: TranslationSchema = {
   categories: {
     listTitle: "Kategori",
     create: "Buat kategori",
+    quickCreate: "Buat kategori baru",
     backToProducts: "Kembali ke produk",
     columns: {
       name: "Nama",
@@ -179,6 +180,7 @@ export const id: TranslationSchema = {
   uoms: {
     listTitle: "Satuan Ukur",
     create: "Buat satuan",
+    quickCreate: "Buat satuan baru",
     backToProducts: "Kembali ke produk",
     columns: {
       name: "Nama",
