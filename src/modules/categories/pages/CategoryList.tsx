@@ -1,14 +1,12 @@
 import { CreateButton, EditButton, List, useTable } from "@refinedev/antd";
 import type { HttpError } from "@refinedev/core";
 import { Space, Table } from "antd";
-import { useNavigate } from "react-router";
 import { createColumnFilter } from "../../../components/columnFilterProps";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Category } from "../category.schema";
 import { CATEGORY_FILTER_COLUMNS } from "../category.filters";
 
 export function CategoryList() {
-  const navigate = useNavigate();
   const { t } = useI18n();
   const { tableProps, filters, setFilters, setCurrentPage } = useTable<
     Category,

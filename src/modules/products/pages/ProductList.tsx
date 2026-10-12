@@ -6,10 +6,8 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useList, type HttpError } from "@refinedev/core";
-import { Button, Space, Table, Tag } from "antd";
-import { AppstoreOutlined, ExperimentOutlined } from "@ant-design/icons";
+import { Space, Table, Tag } from "antd";
 import { useMemo } from "react";
-import { useNavigate } from "react-router";
 import { createColumnFilter } from "../../../components/columnFilterProps";
 import { useI18n } from "../../../i18n/useI18n";
 import { type Product } from "../product.schema";
@@ -26,7 +24,6 @@ type ProductRow = Product & {
 };
 
 export function ProductList() {
-  const navigate = useNavigate();
   const { t, formatCurrency } = useI18n();
   const { tableProps, filters, setFilters, setCurrentPage } = useTable<
     Product,

@@ -1,7 +1,6 @@
 import { CreateButton, EditButton, List, useTable } from "@refinedev/antd";
 import type { HttpError } from "@refinedev/core";
 import { Space, Table, Tag } from "antd";
-import { useNavigate } from "react-router";
 import { createColumnFilter } from "../../../components/columnFilterProps";
 import { useI18n } from "../../../i18n/useI18n";
 import {
@@ -13,7 +12,6 @@ import {
 import { UOM_FILTER_COLUMNS } from "../uom.filters";
 
 export function UomList() {
-  const navigate = useNavigate();
   const { t } = useI18n();
   const { tableProps, filters, setFilters, setCurrentPage } = useTable<
     Uom,

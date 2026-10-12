@@ -1,8 +1,7 @@
-import { useCan, useList } from "@refinedev/core";
-import { Button, Space, Table, Tag } from "antd";
-import { EditOutlined, TagsOutlined } from "@ant-design/icons";
+import { useList } from "@refinedev/core";
+import { Table, Tag } from "antd";
+import { TagsOutlined } from "@ant-design/icons";
 import { useMemo } from "react";
-import { useNavigate } from "react-router";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
 
@@ -24,13 +23,7 @@ function formatQty(value: number | string): string {
 }
 
 export function ProductPricesTable({ productId }: ProductPricesTableProps) {
-  const navigate = useNavigate();
   const { t, formatCurrency } = useI18n();
-  const { data: canEditData } = useCan({
-    resource: "products",
-    action: "edit",
-  });
-  const canEdit = canEditData?.can ?? false;
 
   const uomQuery = useList<ProductUomLookup>({
     resource: "product_uoms",
@@ -65,20 +58,6 @@ export function ProductPricesTable({ productId }: ProductPricesTableProps) {
       dataSource={rows}
       pagination={false}
       scroll={{ x: "max-content" }}
-      title={() => (
-        <Space style={{ width: "100%", justifyContent: "space-between" }}>
-          <span>{t("productPrices.title")}</span>
-          {canEdit && (
-            <Button
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => navigate(`/products/edit/${productId}`)}
-            >
-              {t("productPrices.editUnits")}
-            </Button>
-          )}
-        </Space>
-      )}
     >
       <Table.Column<ProductPrice>
         title={t("productPrices.unit")}

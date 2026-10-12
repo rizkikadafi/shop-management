@@ -35,6 +35,7 @@ export function AppHeader() {
         gap: 16,
         padding: isMobile ? "0 16px" : "0 24px",
         height: 64,
+        lineHeight: "normal"
       }}
     >
       <Space
