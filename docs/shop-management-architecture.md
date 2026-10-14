@@ -342,7 +342,10 @@ supported. If the app becomes multi-user-per-shop, replace the direct
 
 ## 10. Implementation phases
 
-### Phase 1 --- Product CRUD online
+> Status: **Phase 1–3 implemented**, Phase 4 in progress. The resource-generic
+> offline/PWA build is documented in `docs/offline-pwa-plan.md`.
+
+### Phase 1 --- Product CRUD online ✅
 
 -   Set up Bun, Vite, TypeScript, Refine, and Supabase.
 -   Create the `products` table, constraints, Auth, and RLS.
@@ -353,32 +356,33 @@ supported. If the app becomes multi-user-per-shop, replace the direct
 **Done when:** authenticated users can safely manage their own products
 online.
 
-### Phase 2 --- Local persistence
+### Phase 2 --- Local persistence ✅
 
--   Add Dexie and define the local schema.
--   Route Refine reads and writes through the local repository.
+-   Add Dexie and define the local schema (`src/data/local/db.ts`).
+-   Route Refine reads and writes through the local repository
+    (`src/data/local/repository.ts` via `dataProvider.ts`).
 -   Ensure product records remain after refresh.
 -   Add local validation and local-first create/update behavior.
 
 **Done when:** cached products can be viewed and edited offline after
 the app has been loaded.
 
-### Phase 3 --- Queue and sync
+### Phase 3 --- Queue and sync ✅
 
--   Add the durable sync queue.
--   Sync creates, updates, and tombstones to Supabase.
--   Add retry behavior and sync status UI.
+-   Add the durable sync queue (`src/data/sync/queue.ts`).
+-   Sync creates, updates, and tombstones to Supabase
+    (`src/data/sync/sync.service.ts`).
+-   Add retry behavior and sync status UI (`src/components/SyncStatus.tsx`).
 -   Test offline → edit → reload → online → synchronized.
 
 **Done when:** queued changes survive reloads and eventually synchronize
 when connectivity returns.
 
-### Phase 4 --- Reliability
+### Phase 4 --- Reliability (in progress)
 
 -   Test duplicate retries, network failures, stale updates, and
     two-device conflicts.
--   Add a service worker only if the app must reopen offline after a
-    previous visit.
+-   Service worker added (PWA shell + offline reopen) via `vite-plugin-pwa`.
 -   Add backup/restore and operational monitoring appropriate to the
     deployment.
 
@@ -389,7 +393,7 @@ silent deletion of pending local changes.
 
 **Build now** - Authentication - Product list, search/filter, create,
 edit, view - SKU, name, description, price, active/inactive - IndexedDB
-persistence - Offline mutation queue and sync status
+persistence - Offline mutation queue and sync status - Installable PWA
 
 **Defer** - Stock quantity and stock movements - Sales, purchases,
 suppliers, and reports - Barcode scanning - Multi-warehouse support -
@@ -398,16 +402,16 @@ features
 
 ## 12. Core acceptance checklist
 
--   [ ] Product CRUD works online and is protected by RLS.
--   [ ] Cached product list loads without a network connection.
--   [ ] Create/update operations are persisted locally before remote
+-   [x] Product CRUD works online and is protected by RLS.
+-   [x] Cached product list loads without a network connection.
+-   [x] Create/update operations are persisted locally before remote
     sync.
--   [ ] Pending changes survive browser refresh and app restart.
--   [ ] Returning online triggers sync and updates the visible status.
--   [ ] Retry does not create duplicate products.
--   [ ] Deactivation/deletion does not cause a product to reappear after
+-   [x] Pending changes survive browser refresh and app restart.
+-   [x] Returning online triggers sync and updates the visible status.
+-   [x] Retry does not create duplicate products.
+-   [x] Deactivation/deletion does not cause a product to reappear after
     sync.
--   [ ] The UI clearly warns about unsynchronized changes.
--   [ ] Product UI does not call Supabase directly.
--   [ ] A future module can reuse the same local DB and sync
-    infrastructure.
+-   [x] The UI clearly warns about unsynchronized changes.
+-   [x] Product UI does not call Supabase directly.
+-   [x] A future module can reuse the same local DB and sync
+    infrastructure (add a registry entry in `src/data/local/resources.ts`).
