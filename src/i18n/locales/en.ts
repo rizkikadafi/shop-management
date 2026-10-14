@@ -37,6 +37,25 @@ export const en = {
   sync: {
     online: "Online",
     offline: "Offline",
+    syncing: "Syncing…",
+    synced: "Synced",
+    pendingCount: "{count} pending",
+    failedCount: "{count} failed",
+    retry: "Retry sync",
+    offlineHint: "You are offline. Changes are saved on this device and will sync automatically.",
+    pendingHint: "{count} change(s) waiting to sync.",
+    failedHint: "{count} change(s) could not sync.",
+    lastSynced: "Last synced {time}",
+    usersOffline: "User management requires a connection.",
+    usersOfflineDescription:
+      "Creating or editing accounts is online-only. Connect to the internet to manage users.",
+  },
+  pwa: {
+    offlineReady: "Ready to work offline",
+    updateAvailable: "Update available",
+    updateDescription:
+      "A new version is ready. Reload to update now; your saved changes will sync first.",
+    reload: "Reload",
   },
   filters: {
     add: "Add filter",

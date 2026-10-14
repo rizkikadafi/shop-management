@@ -39,6 +39,26 @@ export const id: TranslationSchema = {
   sync: {
     online: "Daring",
     offline: "Luring",
+    syncing: "Menyinkronkan…",
+    synced: "Tersinkron",
+    pendingCount: "{count} menunggu",
+    failedCount: "{count} gagal",
+    retry: "Coba sinkron lagi",
+    offlineHint:
+      "Anda sedang luring. Perubahan disimpan di perangkat ini dan akan tersinkron otomatis.",
+    pendingHint: "{count} perubahan menunggu sinkron.",
+    failedHint: "{count} perubahan gagal sinkron.",
+    lastSynced: "Terakhir sinkron {time}",
+    usersOffline: "Manajemen pengguna membutuhkan koneksi.",
+    usersOfflineDescription:
+      "Membuat atau mengubah akun hanya bisa saat daring. Sambungkan ke internet untuk mengelola pengguna.",
+  },
+  pwa: {
+    offlineReady: "Siap bekerja luring",
+    updateAvailable: "Pembaruan tersedia",
+    updateDescription:
+      "Versi baru siap. Muat ulang untuk memperbarui; perubahan tersimpan akan disinkronkan lebih dulu.",
+    reload: "Muat ulang",
   },
   filters: {
     add: "Tambah filter",

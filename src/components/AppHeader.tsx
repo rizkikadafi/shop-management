@@ -5,6 +5,7 @@ import { Button, Grid, Layout, Space, Typography, theme } from "antd";
 import { useI18n } from "../i18n/useI18n";
 import { AccountButton } from "./AccountButton";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { SyncStatus } from "./SyncStatus";
 
 const { Header } = Layout;
 
@@ -69,6 +70,7 @@ export function AppHeader() {
         style={{ minWidth: 0, overflow: "hidden" }}
       >
         <LanguageSwitcher />
+        <SyncStatus compact={isMobile} />
         {!isMobile && <AccountButton />}
       </Space>
     </Header>

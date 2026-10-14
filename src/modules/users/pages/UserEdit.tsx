@@ -14,6 +14,8 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useI18n } from "../../../i18n/useI18n";
+import { OfflineNotice } from "../../../components/OfflineNotice";
+import { useOnline } from "../../../data/sync/useSyncStatus";
 import { ROLES, type AppRole, type Profile } from "../user.schema";
 import { userService } from "../user.service";
 
@@ -26,6 +28,7 @@ export function UserEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useI18n();
+  const online = useOnline();
   const { open } = useNotification();
   const [form] = Form.useForm<RoleFormValues>();
   const [passwordForm] = Form.useForm<{ password: string }>();
@@ -104,6 +107,8 @@ export function UserEdit() {
         <Alert type="info" showIcon message={t("users.selfWarning")} />
       )}
 
+      {!online && <OfflineNotice />}
+
       {query.isLoading ? (
         <Spin />
       ) : (
@@ -143,7 +148,7 @@ export function UserEdit() {
               <Button
                 type="primary"
                 loading={saving}
-                disabled={isSelf || saving}
+                disabled={isSelf || saving || !online}
                 onClick={() => form.submit()}
               >
                 {t("common.save")}
@@ -171,7 +176,12 @@ export function UserEdit() {
               >
                 <Input.Password autoComplete="new-password" />
               </Form.Item>
-              <Button type="primary" htmlType="submit" loading={resetting}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={resetting}
+                disabled={!online || resetting}
+              >
                 {t("users.setPassword")}
               </Button>
             </Form>

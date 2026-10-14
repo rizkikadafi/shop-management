@@ -11,9 +11,11 @@ import "@refinedev/antd/dist/reset.css";
 import { accessControlProvider } from "../auth/accessControlProvider";
 import { authProvider } from "../auth/authProvider";
 import { dataProvider } from "../data/refine/dataProvider";
+import { SyncManager } from "../data/sync/SyncManager";
 import { AppI18nProvider } from "../i18n/AppI18nProvider";
 import type { Locale } from "../i18n/config";
 import { useI18n } from "../i18n/useI18n";
+import { ReloadPrompt } from "../pwa/ReloadPrompt";
 
 const ANTD_LOCALES: Record<Locale, typeof enUS> = {
   en: enUS,
@@ -90,7 +92,7 @@ function RefineWithProviders({ children }: { children: ReactNode }) {
       ]}
       options={{ syncWithLocation: true, warnWhenUnsavedChanges: true }}
     >
-      {children}
+      <SyncManager>{children}</SyncManager>
     </Refine>
   );
 }
@@ -101,6 +103,7 @@ function ThemedApp({ children }: { children: ReactNode }) {
   return (
     <ConfigProvider theme={RefineThemes.Blue} locale={ANTD_LOCALES[locale]}>
       <AntdApp>
+        <ReloadPrompt />
         <RefineWithProviders>{children}</RefineWithProviders>
       </AntdApp>
     </ConfigProvider>
