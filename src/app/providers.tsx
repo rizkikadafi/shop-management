@@ -77,6 +77,10 @@ function RefineWithProviders({ children }: { children: ReactNode }) {
           meta: { label: t("resources.productPrices"), hide: true },
         },
         {
+          name: "product_purchase_prices",
+          meta: { label: t("resources.productPurchasePrices"), hide: true },
+        },
+        {
           name: "profiles",
           list: "/users",
           create: "/users/create",

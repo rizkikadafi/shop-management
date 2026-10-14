@@ -21,6 +21,7 @@ import {
 } from "../product.schema";
 import { ProductUomsPanel } from "../components/ProductUomsPanel";
 import { ProductPricesPanel } from "../components/ProductPricesPanel";
+import { ProductPurchasePricesPanel } from "../components/ProductPurchasePricesPanel";
 
 export function ProductEdit() {
   const { t, currencySymbol } = useI18n();
@@ -206,6 +207,7 @@ export function ProductEdit() {
               onBaseUomChange={() => unitsQuery.refetch()}
             />
             <ProductPricesPanel productId={record.id} />
+            <ProductPurchasePricesPanel productId={record.id} />
           </Space>
         </>
       )}

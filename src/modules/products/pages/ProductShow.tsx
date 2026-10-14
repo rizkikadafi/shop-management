@@ -5,6 +5,7 @@ import { useI18n } from "../../../i18n/useI18n";
 import { type Product } from "../product.schema";
 import { ProductUnitsTable } from "../components/ProductUnitsTable";
 import { ProductPricesTable } from "../components/ProductPricesTable";
+import { ProductPurchasePricesTable } from "../components/ProductPurchasePricesTable";
 
 type ProductRecord = Product & {
   category?: { name?: string | null } | null;
@@ -88,6 +89,13 @@ export function ProductShow() {
             label: t("products.show.pricing"),
             children: record ? (
               <ProductPricesTable productId={record.id} />
+            ) : null,
+          },
+          {
+            key: "purchase",
+            label: t("products.show.purchase"),
+            children: record ? (
+              <ProductPurchasePricesTable productId={record.id} />
             ) : null,
           },
         ]}

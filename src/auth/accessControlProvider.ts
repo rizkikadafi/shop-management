@@ -26,6 +26,7 @@ export const accessControlProvider: AccessControlProvider = {
       "uoms",
       "product_uoms",
       "product_prices",
+      "product_purchase_prices",
     ];
 
     if (resource && writeOnlyResources.includes(resource)) {
