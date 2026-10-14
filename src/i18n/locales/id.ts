@@ -79,6 +79,7 @@ export const id: TranslationSchema = {
       categoryPlaceholder: "Pilih kategori",
       baseUom: "Satuan Dasar",
       baseUomPlaceholder: "Pilih satuan dasar",
+      baseUomLocked: "Satuan dasar dikelola di bagian Satuan di bawah.",
       active: "Aktif",
     },
     validation: {
@@ -131,6 +132,22 @@ export const id: TranslationSchema = {
     updatedDescription: "Satuan produk telah diperbarui.",
     removed: "Satuan dihapus",
     removedDescription: "Satuan produk telah dihapus.",
+    setAsBase: "Jadikan satuan dasar",
+    setAsBaseConfirm: "Jadikan satuan dasar?",
+    setAsBaseConfirmDescription:
+      "Konversi antar satuan yang ada tetap dipertahankan dan aturan harga tetap berlaku.",
+    baseChanged: "Satuan dasar diperbarui",
+    baseChangedDescription:
+      "Satuan dasar diubah dan konversi dihitung ulang.",
+    parentHint:
+      "Hanya satuan dengan jenis ukuran yang sama dapat menjadi induk.",
+    factorDirection: "Mode input",
+    factorModeUnitToParent: "1 satuan = X induk",
+    factorModeParentToUnit: "X satuan = 1 induk",
+    factorHintUnitToParent:
+      "Berapa bagian satuan induk yang setara dengan satu satuan ini.",
+    factorHintParentToUnit:
+      "Berapa banyak satuan ini yang membentuk satu satuan induk.",
   },
   productPrices: {
     title: "Aturan Harga",

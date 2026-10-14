@@ -1,5 +1,5 @@
 import { Edit, useForm, useSelect } from "@refinedev/antd";
-import { useCan, type HttpError } from "@refinedev/core";
+import { useCan, useList, type HttpError } from "@refinedev/core";
 import { Divider, Form, Input, InputNumber, Space, Switch } from "antd";
 import { useI18n } from "../../../i18n/useI18n";
 import { QuickCreateSelect } from "../../../components/QuickCreateSelect";
@@ -52,6 +52,23 @@ export function ProductEdit() {
     resource: "uoms",
     action: "create",
   });
+
+  // The base unit can only be edited while the product has no other units.
+  // Once conversions exist, use "Set as base" in the Units panel so the tree
+  // can be re-rooted safely (conversions and price rules are preserved).
+  const { query: unitsQuery, result: unitsResult } = useList<{
+    id: string;
+    parent_product_uom_id: string | null;
+  }>({
+    resource: "product_uoms",
+    filters: [{ field: "product_id", operator: "eq", value: record?.id }],
+    pagination: { pageSize: 1000 },
+    meta: { select: "id, parent_product_uom_id" },
+    queryOptions: { enabled: Boolean(record?.id) },
+  });
+  const hasOtherUnits = (unitsResult.data ?? []).some(
+    (unit) => unit.parent_product_uom_id !== null,
+  );
 
   const handleFinish = (values: ProductFormValues) => {
     return onFinish(toUpdate(values) as unknown as ProductFormValues);
@@ -148,12 +165,14 @@ export function ProductEdit() {
         <Form.Item
           label={t("products.form.baseUom")}
           name="base_uom_id"
+          extra={hasOtherUnits ? t("products.form.baseUomLocked") : undefined}
           rules={[
             { required: true, message: t("products.validation.baseUomRequired") },
           ]}
         >
           <QuickCreateSelect<UomFormValues>
             {...uomSelectProps}
+            disabled={hasOtherUnits}
             placeholder={t("products.form.baseUomPlaceholder")}
             resource="uoms"
             fieldName="base_uom_id"
@@ -184,6 +203,7 @@ export function ProductEdit() {
             <ProductUomsPanel
               productId={record.id}
               baseUomId={record.base_uom_id}
+              onBaseUomChange={() => unitsQuery.refetch()}
             />
             <ProductPricesPanel productId={record.id} />
           </Space>

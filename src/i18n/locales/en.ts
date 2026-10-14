@@ -77,6 +77,7 @@ export const en = {
       categoryPlaceholder: "Select a category",
       baseUom: "Base Unit of Measure",
       baseUomPlaceholder: "Select the base unit",
+      baseUomLocked: "Base unit is managed in the Units section below.",
       active: "Active",
     },
     validation: {
@@ -129,6 +130,21 @@ export const en = {
     updatedDescription: "The product unit was updated.",
     removed: "Unit removed",
     removedDescription: "The product unit was removed.",
+    setAsBase: "Set as base",
+    setAsBaseConfirm: "Set as base unit?",
+    setAsBaseConfirmDescription:
+      "Conversions between existing units are kept and price rules keep working.",
+    baseChanged: "Base unit updated",
+    baseChangedDescription: "The base unit was changed and conversions recalculated.",
+    parentHint:
+      "Only units in the same measurement family can be parents.",
+    factorDirection: "Entry mode",
+    factorModeUnitToParent: "1 unit = X parent",
+    factorModeParentToUnit: "X units = 1 parent",
+    factorHintUnitToParent:
+      "How much of the parent unit one of this unit equals.",
+    factorHintParentToUnit:
+      "How many of this unit make up one of the parent unit.",
   },
   productPrices: {
     title: "Price Rules",

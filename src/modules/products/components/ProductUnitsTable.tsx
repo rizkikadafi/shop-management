@@ -3,6 +3,7 @@ import { Space, Table, Tag } from "antd";
 import { useMemo } from "react";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
+import { factorToBaseMap, formatQuantity } from "../uomConversion";
 
 type ProductUom = Database["public"]["Tables"]["product_uoms"]["Row"];
 
@@ -19,12 +20,6 @@ function symbolOf(uom: ProductUomRow, fallback: string): string {
   return uom.uom?.symbol || uom.uom?.name || fallback;
 }
 
-/** Trim trailing zeros from a PostgREST numeric (e.g. 6.000000 -> "6"). */
-function formatQty(value: number | string): string {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed.toString() : String(value);
-}
-
 export function ProductUnitsTable({
   productId,
   baseUomId,
@@ -36,17 +31,22 @@ export function ProductUnitsTable({
     sorters: [{ field: "created_at", order: "asc" }],
     pagination: { pageSize: 1000 },
     meta: {
-      select: "id, product_id, uom_id, parent_product_uom_id, quantity_in_parent, created_at, updated_at, uom:uom_id(name, symbol)",
+      select:
+        "id, product_id, uom_id, parent_product_uom_id, quantity_in_parent, created_at, updated_at, uom:uom_id(name, symbol)",
     },
   });
 
   const rows = useMemo(() => result.data ?? [], [result.data]);
   const isLoading = query.isLoading;
 
-  const unitById = useMemo(
-    () => new Map(rows.map((row) => [row.id, row])),
-    [rows],
+  const factorMap = useMemo(() => factorToBaseMap(rows), [rows]);
+  const baseRow = useMemo(
+    () => rows.find((row) => row.uom_id === baseUomId),
+    [rows, baseUomId],
   );
+  const baseSymbol = baseRow
+    ? symbolOf(baseRow, t("productUnits.unit"))
+    : t("productUnits.unit");
 
   const isBase = (row: ProductUomRow) => row.uom_id === baseUomId;
 
@@ -70,14 +70,12 @@ export function ProductUnitsTable({
       <Table.Column<ProductUomRow>
         title={t("productUnits.conversion")}
         render={(_, row) => {
-          if (!row.parent_product_uom_id) {
+          if (isBase(row)) {
             return t("common.none");
           }
-          const parent = unitById.get(row.parent_product_uom_id);
+          const factor = factorMap.get(row.id) ?? 1;
           const fallback = t("productUnits.unit");
-          return parent
-            ? `1 ${symbolOf(row, fallback)} = ${formatQty(row.quantity_in_parent)} ${symbolOf(parent, fallback)}`
-            : t("common.none");
+          return `1 ${symbolOf(row, fallback)} = ${formatQuantity(factor)} ${baseSymbol}`;
         }}
       />
     </Table>

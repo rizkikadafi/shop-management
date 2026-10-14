@@ -169,16 +169,19 @@ Example:
 
 For this example, `quantity_in_parent` means the number of parent units represented by one unit of the current row. Therefore, the conversion from box to base units is `4 × 6 = 24 pcs`.
 
-Recommended rules:
+**The base UoM does not have to be the smallest unit.** The base is simply the root of the conversion tree; a unit smaller than the base stores a fractional `quantity_in_parent` (for example `1 pcs = 0.041667 box` when `box` is the base). Conversions are always resolved by multiplying `quantity_in_parent` along the path up to the base.
 
-- A product must have exactly one base UoM.
-- The base UoM must be represented by a `product_uoms` record with no parent and a conversion factor of `1`.
-- Every non-base UoM must have a parent.
-- A UoM cannot be its own parent, directly or indirectly.
-- A product should not have duplicate UoM definitions.
-- A parent's UoM and child's UoM must be compatible.
+Enforced rules (see migration `20261014120000_product_uom_tree_integrity.sql`):
 
-A self-referencing foreign key can ensure the parent belongs to the same product when implemented as a composite foreign key. A normal foreign key alone does not prevent cycles; cycle detection needs additional validation.
+- A product has exactly one parentless row per `product_uoms` tree, and it must be the row for `products.base_uom_id` with `quantity_in_parent = 1`. This is checked by a deferred constraint trigger at commit time.
+- Every non-base UoM therefore has a parent.
+- A UoM cannot be its own ancestor, directly or indirectly (cycle guard trigger).
+- A parent's UoM and child's UoM must share the same `uoms.uom_type` (measurement family).
+- A product must not have duplicate UoM definitions (unique `(product_id, uom_id)`).
+
+Changing `products.base_uom_id` to a unit that is already part of the product re-roots the tree: the path from the new base up to the old root is reversed and each factor inverted, so relative conversions and existing price rules are preserved. Changing the base to an unrelated unit is rejected while the product still has other units or price rules; add the desired base as a unit first, then promote it.
+
+A self-referencing foreign key ensures the parent belongs to the same product (composite foreign key). Cycle detection and the single-root invariant need the additional trigger validation noted above.
 
 ### 4.5 `product_prices`
 
