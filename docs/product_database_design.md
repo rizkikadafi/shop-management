@@ -13,6 +13,7 @@ This document defines the relational database design for product management. It 
 - Products and their base unit of measure (UoM).
 - Product-specific UoM options and hierarchical conversions.
 - Package-based prices and quantity-based pricing rules.
+- Purchase prices recorded per product UoM, with conversion-based derivation.
 
 The design is intended to remain simple for the initial Product Management module while allowing future modules such as inventory, purchasing, and sales to reuse the same product data.
 
@@ -22,8 +23,9 @@ The design is intended to remain simple for the initial Product Management modul
 2. **Use a base UoM.** Quantities can be normalized to a product's base unit for inventory and calculations.
 3. **Model conversions per product.** A box may contain 24 pieces for one product and 12 pieces for another.
 4. **Store package prices explicitly.** A package price is the price for the configured package, not automatically the price of one base unit.
-5. **Use relational constraints.** Foreign keys and unique constraints protect data consistency.
-6. **Use decimal types for quantities and money.** Avoid floating-point types for conversion factors, quantities, and prices.
+5. **Record purchase prices per unit.** A purchase price belongs to a specific product UoM; prices for units that have none are derived from a recorded price using the conversion hierarchy.
+6. **Use relational constraints.** Foreign keys and unique constraints protect data consistency.
+7. **Use decimal types for quantities and money.** Avoid floating-point types for conversion factors, quantities, and prices.
 
 ## 3. Entity Relationship Diagram
 
@@ -37,6 +39,8 @@ erDiagram
     PRODUCT_UOMS o|--o{ PRODUCT_UOMS : "parent of"
     PRODUCTS ||--o{ PRODUCT_PRICES : "has price rules"
     PRODUCT_UOMS ||--o{ PRODUCT_PRICES : "price package UoM"
+    PRODUCTS ||--o{ PRODUCT_PURCHASE_PRICES : "has purchase prices"
+    PRODUCT_UOMS ||--o{ PRODUCT_PURCHASE_PRICES : "purchase price UoM"
 
     CATEGORIES {
         uuid id PK
@@ -77,6 +81,13 @@ erDiagram
         numeric package_quantity
         numeric package_price
     }
+
+    PRODUCT_PURCHASE_PRICES {
+        uuid id PK
+        uuid product_id FK
+        uuid product_uom_id FK
+        numeric purchase_price
+    }
 ```
 
 **Relationship notes**
@@ -88,6 +99,9 @@ erDiagram
 - A product UoM can optionally reference a parent product UoM to form a hierarchy.
 - A product can have multiple price rules.
 - Each price rule references a product UoM belonging to the same product.
+- A product can have at most one purchase price recorded per UoM it offers.
+- Each purchase price references a product UoM belonging to the same product.
+- Units without a recorded purchase price are derived by the application from a recorded price using the conversion hierarchy.
 
 > Implementation note: the ERD describes the conceptual relationships. The database should additionally enforce that each product's base UoM is represented in `product_uoms`, and that UoM hierarchies contain no cycles. These rules may require deferred constraints, triggers, or transaction-level service validation.
 
@@ -169,16 +183,19 @@ Example:
 
 For this example, `quantity_in_parent` means the number of parent units represented by one unit of the current row. Therefore, the conversion from box to base units is `4 × 6 = 24 pcs`.
 
-Recommended rules:
+**The base UoM does not have to be the smallest unit.** The base is simply the root of the conversion tree; a unit smaller than the base stores a fractional `quantity_in_parent` (for example `1 pcs = 0.041667 box` when `box` is the base). Conversions are always resolved by multiplying `quantity_in_parent` along the path up to the base.
 
-- A product must have exactly one base UoM.
-- The base UoM must be represented by a `product_uoms` record with no parent and a conversion factor of `1`.
-- Every non-base UoM must have a parent.
-- A UoM cannot be its own parent, directly or indirectly.
-- A product should not have duplicate UoM definitions.
-- A parent's UoM and child's UoM must be compatible.
+Enforced rules (see migration `20261014120000_product_uom_tree_integrity.sql`):
 
-A self-referencing foreign key can ensure the parent belongs to the same product when implemented as a composite foreign key. A normal foreign key alone does not prevent cycles; cycle detection needs additional validation.
+- A product has exactly one parentless row per `product_uoms` tree, and it must be the row for `products.base_uom_id` with `quantity_in_parent = 1`. This is checked by a deferred constraint trigger at commit time.
+- Every non-base UoM therefore has a parent.
+- A UoM cannot be its own ancestor, directly or indirectly (cycle guard trigger).
+- A parent's UoM and child's UoM must share the same `uoms.uom_type` (measurement family).
+- A product must not have duplicate UoM definitions (unique `(product_id, uom_id)`).
+
+Changing `products.base_uom_id` to a unit that is already part of the product re-roots the tree: the path from the new base up to the old root is reversed and each factor inverted, so relative conversions and existing price rules are preserved. Changing the base to an unrelated unit is rejected while the product still has other units or price rules; add the desired base as a unit first, then promote it.
+
+A self-referencing foreign key ensures the parent belongs to the same product (composite foreign key). Cycle detection and the single-root invariant need the additional trigger validation noted above.
 
 ### 4.5 `product_prices`
 
@@ -204,6 +221,33 @@ Stores package-based price rules. `package_price` is the price for one configure
 **Important modeling decision:** this schema supports package prices selected by minimum order quantity. The application must define whether the price package must be purchased in whole multiples or whether the package price is only a pricing tier for an order. If whole-package purchasing is required, enforce package multiples in the sales/order validation logic.
 
 A unique constraint should prevent duplicate rules for the same product, price UoM, price list, and minimum quantity.
+
+### 4.6 `product_purchase_prices`
+
+Stores the purchase price recorded for a product UoM — the unit in which the shop buys the product. Selling prices live in `product_prices`; purchase prices are deliberately kept separate because the two are not derived from one another.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | `uuid` | Primary key | Purchase price identifier |
+| `product_id` | `uuid` | FK to `products.id`, not null | Related product |
+| `product_uom_id` | `uuid` | FK to `product_uoms.id`, not null | Unit the price is expressed in |
+| `purchase_price` | `numeric(18,2)` | Zero or greater | Recorded purchase price for one of this unit |
+| `created_at` | `timestamptz` | Not null, default `now()` | Creation timestamp |
+| `updated_at` | `timestamptz` | Not null, default `now()`, trigger-maintained | Last update timestamp |
+
+Enforced rules (see migration `20261014130000_product_purchase_prices.sql`):
+
+- At most one recorded price per product UoM (unique `(product_id, product_uom_id)`).
+- Composite foreign key `(product_uom_id, product_id)` ensures the referenced UoM belongs to the same product.
+- Deleting a product UoM cascades to its recorded purchase price (`on delete cascade`).
+
+**Derivation, not duplication.** Only explicitly recorded prices are stored. A unit without a row can be priced by the application from any recorded price in the same conversion tree:
+
+```text
+price(unit) = price(anchor) × factor(unit) ÷ factor(anchor)
+```
+
+where `factor` is the conversion factor of the unit to the product's base UoM (see section 4.4). Because derived prices are computed on demand and never persisted, they stay correct automatically when unit conversions or the recorded price change. The application presents recorded prices as authoritative and derived values as calculated suggestions, and lets a user record a derived value to make it explicit.
 
 ## 5. Example Data and Price Selection
 
@@ -235,6 +279,25 @@ If the customer orders 24 pcs, the pricing logic can select the applicable 24-pi
 6. Calculate the order line total and retain the applied price and rule details on the transaction.
 
 Avoid mixing price rules expressed in incompatible UoMs without a defined normalization and selection policy.
+
+### Purchase price derivation example
+
+Reuse the conversion hierarchy from section 4.4 (`1 pack = 6 pcs`, `1 box = 4 packs = 24 pcs`) with `pcs` as the base UoM. Suppose the shop records the price it actually pays for a `box`:
+
+| Recorded unit | Recorded price | Factor to base (`pcs`) |
+|---|---:|---:|
+| box | Rp48,000 | 24 |
+| pcs | — | 1 |
+| pack | — | 6 |
+
+The price per base unit is `Rp48,000 ÷ 24 = Rp2,000`. Prices for the remaining units follow from their factors:
+
+| Unit | Derived price | Calculation |
+|---|---:|---|
+| pack | Rp12,000 | Rp2,000 × 6 |
+| pcs | Rp2,000 | Rp2,000 × 1 |
+
+Recorded prices always win over derived ones, so a shop that knows a specific unit price can record it and the application will leave it untouched. Derivation only fills in units that have no recorded price.
 
 ## 6. Suggested PostgreSQL Schema
 
@@ -307,6 +370,21 @@ create table product_prices (
     min_quantity
   )
 );
+
+create table product_purchase_prices (
+  id uuid primary key default gen_random_uuid(),
+  product_id uuid not null references products(id) on delete cascade,
+  product_uom_id uuid not null,
+  purchase_price numeric(18, 2) not null
+    check (purchase_price >= 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  foreign key (product_uom_id, product_id)
+    references product_uoms(id, product_id) on delete cascade,
+
+  unique (product_id, product_uom_id)
+);
 ```
 
 ### Additional integrity work
@@ -327,6 +405,7 @@ The database stores the canonical product, UoM, and price-rule data. The applica
 
 - Showing product UoM hierarchies in a readable form.
 - Calculating conversions between a selected UoM and the base UoM.
+- Deriving a purchase price for units without a recorded price from a recorded price and the conversion hierarchy.
 - Selecting an applicable price rule consistently.
 - Validating package multiples when required.
 - Keeping a copy of the actual unit/package price and relevant price details on each completed transaction, so historical totals do not change when a price rule is edited later.
@@ -335,10 +414,11 @@ For an offline-first application, local data and pending changes should use stab
 
 ## 8. Scope and Future Extensions
 
-This initial design covers product master data and package-based pricing. It does not yet model:
+This design covers product master data, package-based selling prices, and recorded purchase prices per unit. It does not yet model:
 
 - Stock balances and stock movements.
-- Suppliers and purchase prices.
+- Suppliers, purchase orders, and supplier-specific pricing.
+- Purchase price history, effective date ranges, or per-supplier purchase prices.
 - Sales orders, order lines, discounts, and taxes.
 - Multiple currencies or effective date ranges for prices.
 - Lot/serial tracking or product variants.
@@ -347,12 +427,13 @@ These can be added as separate modules without embedding inventory or sales tran
 
 ## 9. Summary
 
-The core model consists of five tables:
+The core model consists of six tables:
 
 - `categories`
 - `uoms`
 - `products`
 - `product_uoms`
 - `product_prices`
+- `product_purchase_prices`
 
-The key distinction is that UoM conversion defines how physical quantities relate, while package pricing defines how much a particular package costs and when that price is applicable. Keeping these concepts separate provides a clear foundation for Product Management and future inventory and sales modules.
+The key distinction is that UoM conversion defines how physical quantities relate, package pricing defines how much a particular package costs and when that price is applicable, and purchase prices record what the shop pays per unit. Keeping these concepts separate provides a clear foundation for Product Management and future inventory, purchasing, and sales modules.

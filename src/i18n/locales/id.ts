@@ -33,6 +33,7 @@ export const id: TranslationSchema = {
     uoms: "Satuan Ukur",
     productUoms: "Satuan Produk",
     productPrices: "Harga Produk",
+    productPurchasePrices: "Harga Beli Produk",
     users: "Pengguna",
   },
   sync: {
@@ -79,6 +80,7 @@ export const id: TranslationSchema = {
       categoryPlaceholder: "Pilih kategori",
       baseUom: "Satuan Dasar",
       baseUomPlaceholder: "Pilih satuan dasar",
+      baseUomLocked: "Satuan dasar dikelola di bagian Satuan di bawah.",
       active: "Aktif",
     },
     validation: {
@@ -94,6 +96,7 @@ export const id: TranslationSchema = {
       general: "Informasi Umum",
       units: "Konversi Satuan",
       pricing: "Informasi Harga",
+      purchase: "Harga Beli",
       description: "Deskripsi",
       created: "Dibuat",
       updated: "Diperbarui",
@@ -131,6 +134,22 @@ export const id: TranslationSchema = {
     updatedDescription: "Satuan produk telah diperbarui.",
     removed: "Satuan dihapus",
     removedDescription: "Satuan produk telah dihapus.",
+    setAsBase: "Jadikan satuan dasar",
+    setAsBaseConfirm: "Jadikan satuan dasar?",
+    setAsBaseConfirmDescription:
+      "Konversi antar satuan yang ada tetap dipertahankan dan aturan harga tetap berlaku.",
+    baseChanged: "Satuan dasar diperbarui",
+    baseChangedDescription:
+      "Satuan dasar diubah dan konversi dihitung ulang.",
+    parentHint:
+      "Hanya satuan dengan jenis ukuran yang sama dapat menjadi induk.",
+    factorDirection: "Mode input",
+    factorModeUnitToParent: "1 satuan = X induk",
+    factorModeParentToUnit: "X satuan = 1 induk",
+    factorHintUnitToParent:
+      "Berapa bagian satuan induk yang setara dengan satu satuan ini.",
+    factorHintParentToUnit:
+      "Berapa banyak satuan ini yang membentuk satu satuan induk.",
   },
   productPrices: {
     title: "Aturan Harga",
@@ -158,6 +177,41 @@ export const id: TranslationSchema = {
     updatedDescription: "Aturan harga telah diperbarui.",
     removed: "Aturan harga dihapus",
     removedDescription: "Aturan harga telah dihapus.",
+  },
+  purchasePrices: {
+    title: "Harga Beli",
+    add: "Catat harga beli",
+    edit: "Ubah harga beli",
+    record: "Catat",
+    unit: "Satuan",
+    unitPlaceholder: "Pilih satuan produk",
+    price: "Harga beli",
+    source: "Sumber",
+    sourceManual: "Dicatat",
+    sourceDerived: "Dihitung",
+    sourceNone: "Belum diatur",
+    basedOn: "Dihitung dari",
+    calculateFrom: "Hitung dari",
+    calculateFromPlaceholder: "Pilih satuan yang harganya sudah dicatat",
+    calculateFromHint: "Menggunakan konversi satuan untuk mengisi harga.",
+    autoFill: "Isi otomatis",
+    autoFilled: "Harga beli terisi",
+    autoFilledDescription:
+      "Harga hasil perhitungan dicatat untuk satuan lainnya.",
+    autoFillError: "Tidak dapat mengisi harga beli",
+    autoFillErrorDescription:
+      "Coba lagi atau catat harga satu per satu.",
+    actions: "Aksi",
+    removeConfirm: "Hapus harga beli ini?",
+    unitRequired: "Satuan wajib diisi.",
+    priceRequired: "Harga beli wajib diisi.",
+    priceMin: "Harga beli harus nol atau lebih.",
+    added: "Harga beli dicatat",
+    addedDescription: "Harga beli telah dicatat.",
+    updated: "Harga beli diperbarui",
+    updatedDescription: "Harga beli telah diperbarui.",
+    removed: "Harga beli dihapus",
+    removedDescription: "Harga beli telah dihapus.",
   },
   categories: {
     listTitle: "Kategori",

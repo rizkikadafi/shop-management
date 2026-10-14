@@ -63,6 +63,32 @@ isOneToOne: false
       referencedColumns: ["id","product_id"]
     }
                   ]
+                },"product_purchase_prices": {
+                  Row: {
+                    "created_at": string,"id": string,"product_id": string,"product_uom_id": string,"purchase_price": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"product_id": string,"product_uom_id": string,"purchase_price": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"product_id"?: string,"product_uom_id"?: string,"purchase_price"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_purchase_prices_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "product_purchase_prices_product_uom_id_product_id_fkey"
+      columns: ["product_uom_id","product_id"]
+isOneToOne: false
+      referencedRelation: "product_uoms"
+      referencedColumns: ["id","product_id"]
+    }
+                  ]
                 },"product_uoms": {
                   Row: {
                     "created_at": string,"id": string,"parent_product_uom_id": string | null,"product_id": string,"quantity_in_parent": number,"uom_id": string,"updated_at": string
