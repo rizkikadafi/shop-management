@@ -1,6 +1,7 @@
 import { Authenticated, CanAccess } from "@refinedev/core";
 import { ErrorComponent, ThemedLayout } from "@refinedev/antd";
 import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
+import { Spin } from "antd";
 import { Outlet, Route, Routes } from "react-router";
 
 import { Login } from "../auth/Login";
@@ -21,6 +22,19 @@ import { UserCreate } from "../modules/users/pages/UserCreate";
 import { UserEdit } from "../modules/users/pages/UserEdit";
 import { UserList } from "../modules/users/pages/UserList";
 
+const AUTH_LOADING = (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "100vh",
+    }}
+  >
+    <Spin size="large" />
+  </div>
+);
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -28,6 +42,7 @@ export function AppRoutes() {
           element={
             <Authenticated
               key="authenticated-inner"
+              loading={AUTH_LOADING}
               fallback={<CatchAllNavigate to="/login" />}
             >
               <ThemedLayout Header={AppHeader} Sider={AppSider} Title={AppTitle}>
@@ -162,7 +177,11 @@ export function AppRoutes() {
 
         <Route
           element={
-            <Authenticated key="authenticated-outer" fallback={<Outlet />}>
+            <Authenticated
+              key="authenticated-outer"
+              loading={AUTH_LOADING}
+              fallback={<Outlet />}
+            >
               <NavigateToResource resource="products" />
             </Authenticated>
           }

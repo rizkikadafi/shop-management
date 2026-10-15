@@ -2,6 +2,7 @@ import { applyFilters, applySorters, paginate } from "../src/data/local/query";
 import { parseSelect, projectRow } from "../src/data/local/select";
 import { getResourceConfig } from "../src/data/local/resources";
 import type { LocalRow } from "../src/data/local/db";
+import { TimeoutError, withTimeout } from "../src/auth/network";
 
 let failures = 0;
 function check(label: string, actual: unknown, expected: unknown) {
@@ -89,6 +90,18 @@ check("sort price desc", sortedDesc, ["c", "a", "b"]);
 const { rows: page, total } = paginate(rows, { current: 2, pageSize: 2 });
 check("paginate total", total, 3);
 check("paginate page2", page.map((r) => r.id), ["c"]);
+
+// --- network timeout helper ------------------------------------------------
+const resolved = await withTimeout(Promise.resolve("ok"), 1000);
+check("withTimeout resolves before deadline", resolved, "ok");
+
+let timedOut = false;
+try {
+  await withTimeout(new Promise(() => {}), 20);
+} catch (error) {
+  timedOut = error instanceof TimeoutError;
+}
+check("withTimeout rejects with TimeoutError", timedOut, true);
 
 if (failures > 0) {
   console.error(`\n${failures} failure(s)`);
