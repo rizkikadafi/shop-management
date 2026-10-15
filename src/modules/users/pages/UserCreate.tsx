@@ -4,11 +4,14 @@ import { Form, Input, Select } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useI18n } from "../../../i18n/useI18n";
+import { OfflineNotice } from "../../../components/OfflineNotice";
+import { useOnline } from "../../../data/sync/useSyncStatus";
 import { userService } from "../user.service";
 import { ROLES, type CreateUserValues } from "../user.schema";
 
 export function UserCreate() {
   const { t } = useI18n();
+  const online = useOnline();
   const [form] = Form.useForm<CreateUserValues>();
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
@@ -37,9 +40,10 @@ export function UserCreate() {
       saveButtonProps={{
         onClick: () => form.submit(),
         loading: saving,
-        disabled: saving,
+        disabled: saving || !online,
       }}
     >
+      {!online && <OfflineNotice />}
       <Form
         form={form}
         layout="vertical"

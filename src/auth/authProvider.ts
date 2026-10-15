@@ -2,6 +2,12 @@ import type { AuthProvider } from "@refinedev/core";
 import { supabaseClient } from "../data/remote/supabase";
 import { translate } from "../i18n/i18nProvider";
 import { clearRoleCache, getCurrentRole } from "./permissions";
+import {
+  cacheProfile,
+  clearCachedProfile,
+  getCachedProfile,
+  isNetworkError,
+} from "./profileCache";
 
 interface Credentials {
   email?: string;
@@ -18,6 +24,11 @@ const authError = (name: string, error: { message: string }) => ({
  *
  * Self sign-up is intentionally unsupported: staff accounts are provisioned by
  * an admin. Access requires an active row in public.profiles.
+ *
+ * Offline behaviour: sign-in still requires a connection, but once signed in a
+ * stored session plus the cached profile keep the app usable offline. An
+ * explicit inactive/denied response always wins; only unreachable-network
+ * failures fall back to the cache.
  */
 export const authProvider: AuthProvider = {
   login: async ({ email, password }: Credentials) => {
@@ -48,13 +59,14 @@ export const authProvider: AuthProvider = {
 
     const { data: profile } = await supabaseClient
       .from("profiles")
-      .select("is_active")
+      .select("role, is_active")
       .eq("id", data.user.id)
       .maybeSingle();
 
     if (!profile || !profile.is_active) {
       await supabaseClient.auth.signOut();
       clearRoleCache();
+      clearCachedProfile();
       return {
         success: false,
         error: {
@@ -64,6 +76,12 @@ export const authProvider: AuthProvider = {
       };
     }
 
+    cacheProfile({
+      userId: data.user.id,
+      role: profile.role,
+      isActive: profile.is_active,
+      savedAt: Date.now(),
+    });
     clearRoleCache();
     return { success: true, redirectTo: "/products" };
   },
@@ -71,6 +89,7 @@ export const authProvider: AuthProvider = {
   logout: async () => {
     const { error } = await supabaseClient.auth.signOut();
     clearRoleCache();
+    clearCachedProfile();
 
     if (error) {
       return { success: false, error: authError("LogoutError", error) };
@@ -81,8 +100,9 @@ export const authProvider: AuthProvider = {
 
   check: async () => {
     const { data } = await supabaseClient.auth.getSession();
+    const session = data.session;
 
-    if (!data.session) {
+    if (!session) {
       clearRoleCache();
       return {
         authenticated: false,
@@ -95,14 +115,52 @@ export const authProvider: AuthProvider = {
       };
     }
 
-    const { data: profile } = await supabaseClient
-      .from("profiles")
-      .select("is_active")
-      .eq("id", data.session.user.id)
-      .maybeSingle();
+    const userId = session.user.id;
+    const inactive = {
+      authenticated: false,
+      logout: true,
+      redirectTo: "/login",
+      error: {
+        name: "Unauthorized",
+        message: translate("auth.inactive"),
+      },
+    } as const;
 
-    if (!profile || !profile.is_active) {
-      await supabaseClient.auth.signOut();
+    try {
+      const { data: profile, error } = await supabaseClient
+        .from("profiles")
+        .select("role, is_active")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!profile || !profile.is_active) {
+        await supabaseClient.auth.signOut();
+        clearRoleCache();
+        clearCachedProfile();
+        return inactive;
+      }
+
+      cacheProfile({
+        userId,
+        role: profile.role,
+        isActive: profile.is_active,
+        savedAt: Date.now(),
+      });
+      return { authenticated: true };
+    } catch (error) {
+      if (isNetworkError(error)) {
+        const cached = getCachedProfile(userId);
+        if (cached && !cached.isActive) {
+          return inactive;
+        }
+        // Offline: trust the stored session. Write access is still gated by
+        // the cached role through the access-control provider.
+        return { authenticated: true };
+      }
       clearRoleCache();
       return {
         authenticated: false,
@@ -110,26 +168,26 @@ export const authProvider: AuthProvider = {
         redirectTo: "/login",
         error: {
           name: "Unauthorized",
-          message: translate("auth.inactive"),
+          message: translate("auth.sessionRequired"),
         },
       };
     }
-
-    return { authenticated: true };
   },
 
   getIdentity: async () => {
-    const { data } = await supabaseClient.auth.getUser();
+    const { data } = await supabaseClient.auth.getSession();
+    const user = data.session?.user;
 
-    if (!data.user) {
+    if (!user) {
       return null;
     }
 
+    const cached = getCachedProfile(user.id);
     return {
-      id: data.user.id,
-      name: data.user.email ?? data.user.id,
-      email: data.user.email,
-      role: await getCurrentRole(),
+      id: user.id,
+      name: user.email ?? user.id,
+      email: user.email,
+      role: (await getCurrentRole()) ?? cached?.role ?? null,
     };
   },
 

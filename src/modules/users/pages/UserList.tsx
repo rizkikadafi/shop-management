@@ -2,12 +2,15 @@ import { CreateButton, EditButton, List, useTable } from "@refinedev/antd";
 import type { HttpError } from "@refinedev/core";
 import { Space, Table, Tag } from "antd";
 import { createColumnFilter } from "../../../components/columnFilterProps";
+import { OfflineNotice } from "../../../components/OfflineNotice";
 import { useI18n } from "../../../i18n/useI18n";
+import { useOnline } from "../../../data/sync/useSyncStatus";
 import { ROLE_COLORS, ROLE_LABEL_KEYS, type Profile } from "../user.schema";
 import { USER_FILTER_COLUMNS } from "../user.filters";
 
 export function UserList() {
   const { t } = useI18n();
+  const online = useOnline();
   const { tableProps, filters, setFilters, setCurrentPage } = useTable<
     Profile,
     HttpError
@@ -30,8 +33,11 @@ export function UserList() {
   return (
     <List
       title={t("users.listTitle")}
-      headerButtons={<CreateButton>{t("users.create")}</CreateButton>}
+      headerButtons={
+        <CreateButton disabled={!online}>{t("users.create")}</CreateButton>
+      }
     >
+      {!online && <OfflineNotice />}
       <Table {...tableProps} rowKey="id" scroll={{ x: "max-content" }}>
         <Table.Column
           dataIndex="email"
