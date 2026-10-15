@@ -1,7 +1,9 @@
 import type { AuthProvider } from "@refinedev/core";
+import type { Session } from "@supabase/supabase-js";
 import { supabaseClient } from "../data/remote/supabase";
 import { translate } from "../i18n/i18nProvider";
 import { clearRoleCache, getCurrentRole } from "./permissions";
+import { isOffline, withTimeout } from "./network";
 import {
   cacheProfile,
   clearCachedProfile,
@@ -20,15 +22,38 @@ const authError = (name: string, error: { message: string }) => ({
 });
 
 /**
+ * Read the stored session without risking a long block. Supabase normally
+ * returns the session from storage, but an expired token can trigger a
+ * refresh that goes to the network; the timeout turns a stalled refresh into a
+ * fast `null` so callers can fall back to the cached profile.
+ */
+async function readSession(): Promise<Session | null> {
+  try {
+    const { data } = await withTimeout(supabaseClient.auth.getSession());
+    return data.session;
+  } catch {
+    return null;
+  }
+}
+
+function cachedRoleOrNull(userId?: string) {
+  const cached = getCachedProfile(userId);
+  return cached && cached.isActive ? cached.role : null;
+}
+
+/**
  * Refine auth provider backed by Supabase Auth (email + password).
  *
  * Self sign-up is intentionally unsupported: staff accounts are provisioned by
  * an admin. Access requires an active row in public.profiles.
  *
  * Offline behaviour: sign-in still requires a connection, but once signed in a
- * stored session plus the cached profile keep the app usable offline. An
- * explicit inactive/denied response always wins; only unreachable-network
- * failures fall back to the cache.
+ * stored session plus the cached profile keep the app usable offline. When the
+ * device is offline we never wait on the network — the cached profile is trusted
+ * immediately so the app renders from IndexedDB instead of blocking behind a
+ * request that only fails after a long timeout. An explicit inactive/denied
+ * response always wins; only unreachable-network failures fall back to the
+ * cache.
  */
 export const authProvider: AuthProvider = {
   login: async ({ email, password }: Credentials) => {
@@ -80,6 +105,7 @@ export const authProvider: AuthProvider = {
       userId: data.user.id,
       role: profile.role,
       isActive: profile.is_active,
+      email: data.user.email ?? null,
       savedAt: Date.now(),
     });
     clearRoleCache();
@@ -99,23 +125,6 @@ export const authProvider: AuthProvider = {
   },
 
   check: async () => {
-    const { data } = await supabaseClient.auth.getSession();
-    const session = data.session;
-
-    if (!session) {
-      clearRoleCache();
-      return {
-        authenticated: false,
-        logout: true,
-        redirectTo: "/login",
-        error: {
-          name: "Unauthorized",
-          message: translate("auth.sessionRequired"),
-        },
-      };
-    }
-
-    const userId = session.user.id;
     const inactive = {
       authenticated: false,
       logout: true,
@@ -126,12 +135,51 @@ export const authProvider: AuthProvider = {
       },
     } as const;
 
+    const unauthenticated = {
+      authenticated: false,
+      logout: true,
+      redirectTo: "/login",
+      error: {
+        name: "Unauthorized",
+        message: translate("auth.sessionRequired"),
+      },
+    } as const;
+
+    // Offline: trust the cached profile (cleared on logout) instead of waiting
+    // on a request that cannot succeed. This is what keeps the app from
+    // rendering a blank screen until a fetch times out.
+    if (isOffline()) {
+      const cached = getCachedProfile();
+      if (!cached) {
+        return unauthenticated;
+      }
+      if (!cached.isActive) {
+        clearRoleCache();
+        clearCachedProfile();
+        return inactive;
+      }
+      return { authenticated: true };
+    }
+
+    const session = await readSession();
+    if (!session) {
+      const cached = getCachedProfile();
+      if (cached && cached.isActive) {
+        return { authenticated: true };
+      }
+      clearRoleCache();
+      return unauthenticated;
+    }
+
+    const userId = session.user.id;
     try {
-      const { data: profile, error } = await supabaseClient
-        .from("profiles")
-        .select("role, is_active")
-        .eq("id", userId)
-        .maybeSingle();
+      const { data: profile, error } = await withTimeout(
+        supabaseClient
+          .from("profiles")
+          .select("role, is_active")
+          .eq("id", userId)
+          .maybeSingle(),
+      );
 
       if (error) {
         throw error;
@@ -148,6 +196,7 @@ export const authProvider: AuthProvider = {
         userId,
         role: profile.role,
         isActive: profile.is_active,
+        email: session.user.email ?? null,
         savedAt: Date.now(),
       });
       return { authenticated: true };
@@ -157,37 +206,42 @@ export const authProvider: AuthProvider = {
         if (cached && !cached.isActive) {
           return inactive;
         }
-        // Offline: trust the stored session. Write access is still gated by
-        // the cached role through the access-control provider.
+        // Unreachable server: trust the stored session and cached role.
         return { authenticated: true };
       }
       clearRoleCache();
-      return {
-        authenticated: false,
-        logout: true,
-        redirectTo: "/login",
-        error: {
-          name: "Unauthorized",
-          message: translate("auth.sessionRequired"),
-        },
-      };
+      return unauthenticated;
     }
   },
 
   getIdentity: async () => {
-    const { data } = await supabaseClient.auth.getSession();
-    const user = data.session?.user;
+    const cached = getCachedProfile();
+    const offlineIdentity = async () => ({
+      id: cached!.userId,
+      name: cached!.email ?? cached!.userId,
+      email: cached!.email ?? null,
+      role: (await getCurrentRole()) ?? cached!.role ?? null,
+    });
+
+    if (isOffline() && cached) {
+      return offlineIdentity();
+    }
+
+    const session = await readSession();
+    const user = session?.user;
 
     if (!user) {
+      if (cached) {
+        return offlineIdentity();
+      }
       return null;
     }
 
-    const cached = getCachedProfile(user.id);
     return {
       id: user.id,
       name: user.email ?? user.id,
       email: user.email,
-      role: (await getCurrentRole()) ?? cached?.role ?? null,
+      role: (await getCurrentRole()) ?? cachedRoleOrNull(user.id),
     };
   },
 

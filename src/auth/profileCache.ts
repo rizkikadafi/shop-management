@@ -6,6 +6,8 @@ export interface CachedProfile {
   userId: string;
   role: AppRole;
   isActive: boolean;
+  /** Last known email, used to render identity while offline. */
+  email?: string | null;
   savedAt: number;
 }
 
@@ -70,6 +72,7 @@ export function isNetworkError(error: unknown): boolean {
     message.includes("network") ||
     message.includes("load failed") ||
     message.includes("timeout") ||
+    message.includes("timed out") ||
     message.includes("fetch failed")
   );
 }
