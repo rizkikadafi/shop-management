@@ -11,12 +11,12 @@ export default defineConfig({
       // Registration is done explicitly in src/pwa/register.ts so the app can
       // surface a non-interrupting "update available" prompt.
       injectRegister: false,
-      includeAssets: ['favicon.svg', 'icons.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.ico', 'favicon.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'Shop Management',
         short_name: 'Shop',
         description: 'Offline-first shop and product management.',
-        theme_color: '#863bff',
+        theme_color: '#1677FF',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
@@ -44,6 +44,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
+        // shop-icon.png is the high-resolution source artwork used to generate
+        // the icons above; it is not needed at runtime, so keep it out of the
+        // precache (the generated sizes are what the app/manifest reference).
+        globIgnores: ['**/icons/shop-icon.png'],
         // The single app-shell chunk is intentionally large (antd + Refine);
         // it must be precached for the app to boot offline.
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
