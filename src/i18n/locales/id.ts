@@ -199,6 +199,11 @@ export const id: TranslationSchema = {
     minQuantity: "Kuantitas minimum",
     price: "Harga",
     actions: "Aksi",
+    base: "Dasar",
+    baseLinked:
+      "Terhubung dengan harga dasar produk. Mengubah harga di sini juga memperbarui harga produk.",
+    duplicate:
+      "Aturan harga dengan satuan, daftar harga, dan kuantitas minimum ini sudah ada.",
     removeConfirm: "Hapus aturan harga ini?",
     unitRequired: "Satuan wajib diisi.",
     priceListRequired: "Daftar harga wajib diisi.",

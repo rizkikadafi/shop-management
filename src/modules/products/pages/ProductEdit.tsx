@@ -27,7 +27,7 @@ import { ProductPurchasePricesPanel } from "../components/ProductPurchasePricesP
 export function ProductEdit() {
   const { t, currencySymbol } = useI18n();
   const [activeTab, setActiveTab] = useState("general");
-  const { formProps, saveButtonProps, onFinish, query } = useForm<
+  const { formProps, saveButtonProps, onFinish, form, query } = useForm<
     Product,
     HttpError,
     ProductFormValues
@@ -72,6 +72,11 @@ export function ProductEdit() {
   const hasOtherUnits = (unitsResult.data ?? []).some(
     (unit) => unit.parent_product_uom_id !== null,
   );
+
+  /** Keep the General tab in sync when the base price is edited in Pricing. */
+  const handleBasePriceChange = (price: number) => {
+    form.setFieldValue("price", price);
+  };
 
   const handleFinish = (values: ProductFormValues) => {
     return onFinish(toUpdate(values) as unknown as ProductFormValues);
@@ -246,7 +251,11 @@ export function ProductEdit() {
             key: "pricing",
             label: t("products.show.pricing"),
             children: record ? (
-              <ProductPricesPanel productId={record.id} />
+              <ProductPricesPanel
+                productId={record.id}
+                baseUomId={record.base_uom_id}
+                onBasePriceChange={handleBasePriceChange}
+              />
             ) : null,
           },
           {

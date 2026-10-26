@@ -2,6 +2,7 @@ import {
   useCan,
   useCreate,
   useDelete,
+  useInvalidate,
   useList,
   useUpdate,
 } from "@refinedev/core";
@@ -14,12 +15,20 @@ import {
   Select,
   Space,
   Table,
+  Tag,
+  Typography,
 } from "antd";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMemo, useState } from "react";
 import { RowActions } from "../../../components/RowActions";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
+import {
+  BASE_PRICE_LIST,
+  BASE_PRICE_MIN_QUANTITY,
+  isBasePriceRule,
+  samePriceRuleIdentity,
+} from "../basePrice";
 
 type ProductPrice = Database["public"]["Tables"]["product_prices"]["Row"];
 
@@ -34,10 +43,17 @@ interface PriceFormValues {
 
 interface ProductPricesPanelProps {
   productId: string;
+  baseUomId: string;
+  onBasePriceChange?: (price: number) => void;
 }
 
-export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
+export function ProductPricesPanel({
+  productId,
+  baseUomId,
+  onBasePriceChange,
+}: ProductPricesPanelProps) {
   const { t, formatCurrency } = useI18n();
+  const invalidate = useInvalidate();
   const { data: canWriteData } = useCan({
     resource: "product_prices",
     action: "create",
@@ -46,21 +62,28 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
 
   const uomQuery = useList<{
     id: string;
+    uom_id: string;
     uom?: { name?: string | null; symbol?: string | null } | null;
   }>({
     resource: "product_uoms",
     filters: [{ field: "product_id", operator: "eq", value: productId }],
+    pagination: { pageSize: 1000 },
     meta: { select: "id, uom_id, uom:uom_id(name, symbol)" },
   });
   const uomRecords = useMemo(
     () => uomQuery.result.data ?? [],
     [uomQuery.result.data],
   );
+  const baseProductUomId = useMemo(
+    () => uomRecords.find((uom) => uom.uom_id === baseUomId)?.id,
+    [uomRecords, baseUomId],
+  );
 
   const { query, result } = useList<PriceRow>({
     resource: "product_prices",
     filters: [{ field: "product_id", operator: "eq", value: productId }],
     sorters: [{ field: "created_at", order: "asc" }],
+    pagination: { pageSize: 1000 },
     meta: {
       select: "id, product_id, product_uom_id, price_list, min_quantity, package_quantity, package_price, created_at, updated_at",
     },
@@ -91,10 +114,18 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
     [uomRecords],
   );
 
+  const editingIsBasePrice = editing
+    ? isBasePriceRule(editing, baseProductUomId)
+    : false;
+
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
-    form.setFieldsValue({ price_list: "retail", min_quantity: 1, package_price: 0 });
+    form.setFieldsValue({
+      price_list: BASE_PRICE_LIST,
+      min_quantity: BASE_PRICE_MIN_QUANTITY,
+      package_price: 0,
+    });
     setModalOpen(true);
   };
 
@@ -110,6 +141,34 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
   };
 
   const handleFinish = (values: PriceFormValues) => {
+    const price = Number(values.package_price);
+    const identity = {
+      product_uom_id: values.product_uom_id,
+      price_list: values.price_list,
+      min_quantity: Number(values.min_quantity),
+    };
+    const duplicate = rows.find(
+      (row) => row.id !== editing?.id && samePriceRuleIdentity(row, identity),
+    );
+    if (duplicate && !editingIsBasePrice) {
+      form.setFields([
+        {
+          name: "price_list",
+          errors: [t("productPrices.duplicate")],
+        },
+      ]);
+      return;
+    }
+
+    const linkedAfter = isBasePriceRule(identity, baseProductUomId);
+    const applyBasePrice = () => {
+      if (!linkedAfter) {
+        return;
+      }
+      onBasePriceChange?.(price);
+      invalidate({ resource: "products", invalidates: ["list"] });
+    };
+
     if (editing) {
       updateMutation(
         {
@@ -117,7 +176,8 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
           values: {
             price_list: values.price_list.trim(),
             min_quantity: Number(values.min_quantity),
-            package_price: Number(values.package_price),
+            ...(linkedAfter ? { package_quantity: 1 } : {}),
+            package_price: price,
           },
           invalidates: ["list"],
           successNotification: {
@@ -126,7 +186,12 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
             description: t("productPrices.updatedDescription"),
           },
         },
-        { onSuccess: () => setModalOpen(false) },
+        {
+          onSuccess: () => {
+            setModalOpen(false);
+            applyBasePrice();
+          },
+        },
       );
       return;
     }
@@ -140,7 +205,7 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
           price_list: values.price_list.trim(),
           min_quantity: Number(values.min_quantity),
           package_quantity: 1,
-          package_price: Number(values.package_price),
+          package_price: price,
         },
         invalidates: ["list"],
         successNotification: {
@@ -150,13 +215,20 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
         },
       },
       {
-        onSuccess: () => setModalOpen(false),
+        onSuccess: () => {
+          setModalOpen(false);
+          applyBasePrice();
+        },
         onError: () => refetch(),
       },
     );
   };
 
   const handleDelete = (row: PriceRow) => {
+    if (isBasePriceRule(row, baseProductUomId)) {
+      return;
+    }
+
     deleteMutation(
       {
         resource: "product_prices",
@@ -200,9 +272,17 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
           title={t("productPrices.unit")}
           render={(_, row) => {
             const productUom = uomById.get(row.product_uom_id);
-            return productUom?.uom
+            const label = productUom?.uom
               ? `${productUom.uom.name} (${productUom.uom.symbol ?? ""})`
               : row.product_uom_id;
+            return (
+              <Space size={4}>
+                {label}
+                {isBasePriceRule(row, baseProductUomId) && (
+                  <Tag color="green">{t("productPrices.base")}</Tag>
+                )}
+              </Space>
+            );
           }}
         />
         <Table.Column<PriceRow>
@@ -221,8 +301,13 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
           title={t("productPrices.actions")}
           width={80}
           align="center"
-          render={(_, row) =>
-            canWrite ? (
+          render={(_, row) => {
+            if (!canWrite) {
+              return null;
+            }
+
+            const linked = isBasePriceRule(row, baseProductUomId);
+            return (
               <RowActions
                 moreLabel={t("common.moreActions")}
                 maxInline={2}
@@ -233,21 +318,25 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
                     icon: <EditOutlined />,
                     onClick: () => openEdit(row),
                   },
-                  {
-                    key: "remove",
-                    label: t("common.remove"),
-                    icon: <DeleteOutlined />,
-                    danger: true,
-                    confirm: {
-                      title: t("productPrices.removeConfirm"),
-                      okText: t("common.remove"),
-                    },
-                    onClick: () => handleDelete(row),
-                  },
+                  ...(linked
+                    ? []
+                    : [
+                      {
+                        key: "remove",
+                        label: t("common.remove"),
+                        icon: <DeleteOutlined />,
+                        danger: true,
+                        confirm: {
+                          title: t("productPrices.removeConfirm"),
+                          okText: t("common.remove"),
+                        },
+                        onClick: () => handleDelete(row),
+                      },
+                    ]),
                 ]}
               />
-            ) : null
-          }
+            );
+          }}
         />
       </Table>
 
@@ -259,6 +348,11 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
         destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>
+          {editingIsBasePrice && (
+            <Typography.Paragraph type="secondary">
+              {t("productPrices.baseLinked")}
+            </Typography.Paragraph>
+          )}
           <Form.Item
             label={t("productPrices.unit")}
             name="product_uom_id"
@@ -268,6 +362,7 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
           >
             <Select
               showSearch
+              disabled={editingIsBasePrice}
               placeholder={t("productPrices.unitPlaceholder")}
               options={uomOptions}
             />
@@ -279,7 +374,10 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
               { required: true, message: t("productPrices.priceListRequired") },
             ]}
           >
-            <Input placeholder={t("productPrices.priceListPlaceholder")} />
+            <Input
+              disabled={editingIsBasePrice}
+              placeholder={t("productPrices.priceListPlaceholder")}
+            />
           </Form.Item>
           <Form.Item
             label={t("productPrices.minQuantity")}
@@ -301,6 +399,7 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
               step={1}
               precision={6}
               style={{ width: "100%" }}
+              disabled={editingIsBasePrice}
             />
           </Form.Item>
           <Form.Item

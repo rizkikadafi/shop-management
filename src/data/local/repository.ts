@@ -16,6 +16,10 @@ import {
   saveLocalDelete,
   saveLocalUpdate,
 } from "../sync/queue";
+import {
+  syncBasePriceFromProduct,
+  syncProductPriceFromRule,
+} from "./productBasePrice";
 
 /**
  * Offline-aware data provider.
@@ -46,6 +50,15 @@ function requireWritable(config: SyncResourceConfig): void {
       `${config.name} can only be changed while online.`,
       403,
     );
+  }
+}
+
+/** Keep `products.price` and the linked base-unit price rule in step. */
+async function syncPriceLinks(resource: string, row: LocalRow): Promise<void> {
+  if (resource === "products") {
+    await syncBasePriceFromProduct(row);
+  } else if (resource === "product_prices") {
+    await syncProductPriceFromRule(row);
   }
 }
 
@@ -138,6 +151,7 @@ export const localDataProvider: DataProvider = {
     };
 
     await saveLocalCreate(resource, row);
+    await syncPriceLinks(resource, row);
     return { data: stripLocalMeta(row) as never };
   },
 
@@ -155,6 +169,7 @@ export const localDataProvider: DataProvider = {
         ...localMeta("pending"),
       };
       await saveLocalCreate(resource, row);
+      await syncPriceLinks(resource, row);
       created.push(stripLocalMeta(row));
     }
     return { data: created as never };
@@ -178,6 +193,7 @@ export const localDataProvider: DataProvider = {
     };
 
     await saveLocalUpdate(resource, row);
+    await syncPriceLinks(resource, row);
     return { data: stripLocalMeta(row) as never };
   },
 
@@ -199,6 +215,7 @@ export const localDataProvider: DataProvider = {
         ...localMeta("pending", existing?.__baseUpdatedAt ?? null),
       };
       await saveLocalUpdate(resource, row);
+      await syncPriceLinks(resource, row);
       updated.push(stripLocalMeta(row));
     }
     return { data: updated as never };

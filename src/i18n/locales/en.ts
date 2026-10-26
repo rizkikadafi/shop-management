@@ -195,6 +195,11 @@ export const en = {
     minQuantity: "Minimum quantity",
     price: "Price",
     actions: "Actions",
+    base: "Base",
+    baseLinked:
+      "Linked to the product's base price. Changing the price here also updates the product price.",
+    duplicate:
+      "A price rule with this unit, price list, and minimum quantity already exists.",
     removeConfirm: "Remove this price rule?",
     unitRequired: "Unit is required.",
     priceListRequired: "Price list is required.",

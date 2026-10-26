@@ -8,6 +8,10 @@ import {
   factorToBaseMap,
   formatQuantity,
 } from "../src/modules/products/uomConversion";
+import {
+  isBasePriceRule,
+  samePriceRuleIdentity,
+} from "../src/modules/products/basePrice";
 import { buildGlobalFactorMap } from "../src/modules/uoms/uomGlobalConversion";
 
 let failures = 0;
@@ -69,6 +73,42 @@ check("project shape", projected, {
   base_uom: { name: "Bottle", symbol: "btl" },
 });
 check("project missing embed is null", projectRow(meta({ id: "p2" }), parsed, config, embedMaps).category, null);
+
+// --- base price link identity ----------------------------------------------
+const baseRule = {
+  product_uom_id: "pu-base",
+  price_list: " Retail ",
+  min_quantity: "1.000000",
+};
+check(
+  "base price rule matches base unit, retail, min 1",
+  isBasePriceRule(baseRule, "pu-base"),
+  true,
+);
+check(
+  "base price rule rejects another unit",
+  isBasePriceRule(baseRule, "pu-other"),
+  false,
+);
+check(
+  "base price rule rejects another list",
+  isBasePriceRule({ ...baseRule, price_list: "wholesale" }, "pu-base"),
+  false,
+);
+check(
+  "base price rule rejects another minimum",
+  isBasePriceRule({ ...baseRule, min_quantity: 2 }, "pu-base"),
+  false,
+);
+check(
+  "price rule identity ignores case and spaces",
+  samePriceRuleIdentity(baseRule, {
+    product_uom_id: "pu-base",
+    price_list: "retail",
+    min_quantity: 1,
+  }),
+  true,
+);
 
 // --- filter parity ---------------------------------------------------------
 const rows = [

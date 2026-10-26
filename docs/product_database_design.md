@@ -257,6 +257,8 @@ Stores package-based price rules. `package_price` is the price for one configure
 
 A unique constraint should prevent duplicate rules for the same product, price UoM, price list, and minimum quantity.
 
+**Linked base price.** The `retail` rule for the product's base-unit row at `min_quantity = 1` is the product's base price. `products.price` and that rule are kept in sync in both directions by `20261026130000_product_base_price_link.sql`. The migration also creates the rule for existing products and for every new product base row, and keeps its `package_quantity` at 1. The UI marks this rule as **Base** and does not allow changing its unit, price list, minimum quantity, or deleting it; its price can be edited from either the product form or the price-rule editor.
+
 ### 4.6 `product_purchase_prices`
 
 Stores the purchase price recorded for a product UoM — the unit in which the shop buys the product. Selling prices live in `product_prices`; purchase prices are deliberately kept separate because the two are not derived from one another.
