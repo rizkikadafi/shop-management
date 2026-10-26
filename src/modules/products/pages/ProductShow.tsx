@@ -35,12 +35,6 @@ export function ProductShow() {
                 <Descriptions.Item label={t("products.columns.name")}>
                   {record?.name}
                 </Descriptions.Item>
-                <Descriptions.Item label={t("products.columns.sku")}>
-                  {record?.sku ?? t("common.none")}
-                </Descriptions.Item>
-                <Descriptions.Item label={t("products.form.description")}>
-                  {record?.description ?? t("common.none")}
-                </Descriptions.Item>
                 <Descriptions.Item label={t("products.columns.category")}>
                   {record?.category?.name ?? t("common.none")}
                 </Descriptions.Item>
@@ -51,6 +45,12 @@ export function ProductShow() {
                 </Descriptions.Item>
                 <Descriptions.Item label={t("products.columns.price")}>
                   {record ? formatCurrency(record.price) : t("common.none")}
+                </Descriptions.Item>
+                <Descriptions.Item label={t("products.columns.sku")}>
+                  {record?.sku ?? t("common.none")}
+                </Descriptions.Item>
+                <Descriptions.Item label={t("products.form.description")}>
+                  {record?.description ?? t("common.none")}
                 </Descriptions.Item>
                 <Descriptions.Item label={t("common.status")}>
                   {record ? (

@@ -74,6 +74,19 @@ export function ProductPurchasePricesTable({
     () => derivePurchasePrices(units, recordedPrices),
     [units, recordedPrices],
   );
+  const unitFilters = useMemo(
+    () =>
+      units.map((unit) => ({
+        text: labelOf(unit, unit.id),
+        value: unit.id,
+      })),
+    [units],
+  );
+
+  const filterLocale = {
+    filterConfirm: t("filters.filter"),
+    filterReset: t("filters.clear"),
+  };
 
   return (
     <Table<ProductUomRow>
@@ -81,15 +94,18 @@ export function ProductPurchasePricesTable({
       loading={isLoading}
       dataSource={units}
       pagination={false}
+      locale={filterLocale}
       scroll={{ x: "max-content" }}
     >
       <Table.Column<ProductUomRow>
         title={t("purchasePrices.unit")}
+        filters={unitFilters}
+        filterSearch
+        onFilter={(value, unit) => unit.id === value}
         render={(_, unit) => labelOf(unit, unit.id)}
       />
       <Table.Column<ProductUomRow>
         title={t("purchasePrices.price")}
-        align="right"
         render={(_, unit) => {
           const info = infoByUnit.get(unit.id);
           if (!info || info.price === null) {

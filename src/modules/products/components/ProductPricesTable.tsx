@@ -1,6 +1,5 @@
 import { useList } from "@refinedev/core";
-import { Table, Tag } from "antd";
-import { TagsOutlined } from "@ant-design/icons";
+import { Table } from "antd";
 import { useMemo } from "react";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
@@ -54,16 +53,38 @@ export function ProductPricesTable({ productId }: ProductPricesTableProps) {
     [uomRecords],
   );
 
+  const unitFilters = useMemo(
+    () =>
+      uomRecords.map((uom) => ({
+        text: uom.uom ? `${uom.uom.name} (${uom.uom.symbol ?? ""})` : uom.id,
+        value: uom.id,
+      })),
+    [uomRecords],
+  );
+
+  const filterLocale = {
+    filterConfirm: t("filters.filter"),
+    filterReset: t("filters.clear"),
+  };
+
   return (
     <Table<ProductPrice>
       rowKey="id"
       loading={isLoading}
       dataSource={rows}
       pagination={false}
+      locale={filterLocale}
       scroll={{ x: "max-content" }}
     >
       <Table.Column<ProductPrice>
+        title={t("productPrices.minQty")}
+        render={(_, row) => formatQty(row.min_quantity)}
+      />
+      <Table.Column<ProductPrice>
         title={t("productPrices.unit")}
+        filters={unitFilters}
+        filterSearch
+        onFilter={(value, row) => row.product_uom_id === value}
         render={(_, row) => {
           const productUom = uomById.get(row.product_uom_id);
           return productUom?.uom
@@ -72,21 +93,7 @@ export function ProductPricesTable({ productId }: ProductPricesTableProps) {
         }}
       />
       <Table.Column<ProductPrice>
-        title={t("productPrices.priceList")}
-        render={(_, row) => (
-          <Tag icon={<TagsOutlined />} color="blue">
-            {row.price_list}
-          </Tag>
-        )}
-      />
-      <Table.Column<ProductPrice>
-        title={t("productPrices.minQty")}
-        align="right"
-        render={(_, row) => formatQty(row.min_quantity)}
-      />
-      <Table.Column<ProductPrice>
         title={t("productPrices.price")}
-        align="right"
         render={(_, row) => formatCurrency(row.package_price)}
       />
     </Table>

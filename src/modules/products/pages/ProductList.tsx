@@ -1,6 +1,7 @@
 import {
   CreateButton,
   EditButton,
+  getDefaultSortOrder,
   List,
   ShowButton,
   useTable,
@@ -25,7 +26,7 @@ type ProductRow = Product & {
 
 export function ProductList() {
   const { t, formatCurrency } = useI18n();
-  const { tableProps, filters, setFilters, setCurrentPage } = useTable<
+  const { tableProps, filters, setFilters, setCurrentPage, sorters } = useTable<
     Product,
     HttpError
   >({
@@ -105,13 +106,9 @@ export function ProductList() {
         <Table.Column
           dataIndex="name"
           title={t("products.columns.name")}
+          sorter
+          sortOrder={getDefaultSortOrder("name", sorters)}
           {...filterProps("name")}
-        />
-        <Table.Column
-          dataIndex="sku"
-          title={t("products.columns.sku")}
-          render={(value: string | null) => value ?? t("common.none")}
-          {...filterProps("sku")}
         />
         <Table.Column
           dataIndex="category_id"
@@ -134,9 +131,14 @@ export function ProductList() {
         <Table.Column
           dataIndex="price"
           title={t("products.columns.price")}
-          align="right"
           render={(value: number | string) => formatCurrency(value)}
           {...filterProps("price")}
+        />
+        <Table.Column
+          dataIndex="sku"
+          title={t("products.columns.sku")}
+          render={(value: string | null) => value ?? t("common.none")}
+          {...filterProps("sku")}
         />
         <Table.Column
           dataIndex="is_active"

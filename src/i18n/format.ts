@@ -33,7 +33,7 @@ export function formatCurrency(
   return new Intl.NumberFormat(LOCALE_CONFIG[locale].intl, {
     style: "currency",
     currency: LOCALE_CONFIG[locale].currency,
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 2,
     ...options,
   }).format(parsed);

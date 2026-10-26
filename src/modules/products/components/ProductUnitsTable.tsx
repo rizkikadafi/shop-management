@@ -48,6 +48,27 @@ export function ProductUnitsTable({
     ? symbolOf(baseRow, t("productUnits.unit"))
     : t("productUnits.unit");
 
+  const unitFilters = useMemo(() => {
+    const seen = new Set<string>();
+    return rows.flatMap((row) => {
+      if (seen.has(row.uom_id)) return [];
+      seen.add(row.uom_id);
+      return [
+        {
+          text: row.uom
+            ? `${row.uom.name} (${row.uom.symbol ?? ""})`
+            : row.uom_id,
+          value: row.uom_id,
+        },
+      ];
+    });
+  }, [rows]);
+
+  const filterLocale = {
+    filterConfirm: t("filters.filter"),
+    filterReset: t("filters.clear"),
+  };
+
   const isBase = (row: ProductUomRow) => row.uom_id === baseUomId;
 
   return (
@@ -56,10 +77,14 @@ export function ProductUnitsTable({
       loading={isLoading}
       dataSource={rows}
       pagination={false}
+      locale={filterLocale}
       scroll={{ x: "max-content" }}
     >
       <Table.Column<ProductUomRow>
         title={t("productUnits.unit")}
+        filters={unitFilters}
+        filterSearch
+        onFilter={(value, row) => row.uom_id === value}
         render={(_, row) => (
           <Space>
             {row.uom ? `${row.uom.name} (${row.uom.symbol ?? ""})` : row.uom_id}
