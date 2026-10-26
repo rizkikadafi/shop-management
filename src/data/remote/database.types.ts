@@ -91,14 +91,14 @@ isOneToOne: false
                   ]
                 },"product_uoms": {
                   Row: {
-                    "created_at": string,"id": string,"parent_product_uom_id": string | null,"product_id": string,"quantity_in_parent": number,"uom_id": string,"updated_at": string
+                    "conversion_mode": "global" | "local","created_at": string,"id": string,"parent_product_uom_id": string | null,"product_id": string,"quantity_in_parent": number,"uom_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"parent_product_uom_id"?: string | null,"product_id": string,"quantity_in_parent": number,"uom_id": string,"updated_at"?: string
+                    "conversion_mode"?: "global" | "local","created_at"?: string,"id"?: string,"parent_product_uom_id"?: string | null,"product_id": string,"quantity_in_parent": number,"uom_id": string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"parent_product_uom_id"?: string | null,"product_id"?: string,"quantity_in_parent"?: number,"uom_id"?: string,"updated_at"?: string
+                    "conversion_mode"?: "global" | "local","created_at"?: string,"id"?: string,"parent_product_uom_id"?: string | null,"product_id"?: string,"quantity_in_parent"?: number,"uom_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -163,17 +163,23 @@ isOneToOne: false
                   ]
                 },"uoms": {
                   Row: {
-                    "created_at": string,"id": string,"name": string,"symbol": string,"uom_type": string,"updated_at": string
+                    "created_at": string,"global_parent_uom_id": string | null,"global_quantity_in_parent": number | null,"id": string,"name": string,"symbol": string,"uom_type": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"name": string,"symbol": string,"uom_type": string,"updated_at"?: string
+                    "created_at"?: string,"global_parent_uom_id"?: string | null,"global_quantity_in_parent"?: number | null,"id"?: string,"name": string,"symbol": string,"uom_type": string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"name"?: string,"symbol"?: string,"uom_type"?: string,"updated_at"?: string
+                    "created_at"?: string,"global_parent_uom_id"?: string | null,"global_quantity_in_parent"?: number | null,"id"?: string,"name"?: string,"symbol"?: string,"uom_type"?: string,"updated_at"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "uoms_global_parent_uom_id_fkey"
+      columns: ["global_parent_uom_id"]
+isOneToOne: false
+      referencedRelation: "uoms"
+      referencedColumns: ["id"]
+    }
                   ]
                 }
           }

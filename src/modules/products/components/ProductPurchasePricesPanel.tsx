@@ -22,6 +22,7 @@ import { CalculatorOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMemo, useState } from "react";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
+import { useUomGlobalFactors } from "../../uoms/useUomGlobalFactors";
 import {
   derivePriceBetween,
   derivePurchasePrices,
@@ -32,7 +33,10 @@ type ProductPurchasePrice =
   Database["public"]["Tables"]["product_purchase_prices"]["Row"];
 
 type ProductUomRow = Database["public"]["Tables"]["product_uoms"]["Row"] & {
-  uom?: { name?: string | null; symbol?: string | null } | null;
+  uom?: {
+    name?: string | null;
+    symbol?: string | null;
+  } | null;
 };
 
 interface PurchasePriceFormValues {
@@ -61,6 +65,10 @@ export function ProductPurchasePricesPanel({
     action: "create",
   });
   const canWrite = canWriteData?.can ?? false;
+  const {
+    globalFactors,
+    isLoading: uomsLoading,
+  } = useUomGlobalFactors();
 
   const uomQuery = useList<ProductUomRow>({
     resource: "product_uoms",
@@ -69,7 +77,7 @@ export function ProductPurchasePricesPanel({
     pagination: { pageSize: 1000 },
     meta: {
       select:
-        "id, product_id, uom_id, parent_product_uom_id, quantity_in_parent, created_at, updated_at, uom:uom_id(name, symbol)",
+        "id, product_id, uom_id, parent_product_uom_id, quantity_in_parent, conversion_mode, created_at, updated_at, uom:uom_id(name, symbol)",
     },
   });
   const units = useMemo(
@@ -88,7 +96,7 @@ export function ProductPurchasePricesPanel({
     },
   });
   const prices = useMemo(() => result.data ?? [], [result.data]);
-  const isLoading = query.isLoading || uomQuery.query.isLoading;
+  const isLoading = query.isLoading || uomQuery.query.isLoading || uomsLoading;
   const refetch = query.refetch;
 
   const { mutate: createMutation, mutateAsync: createAsync } = useCreate({
@@ -124,8 +132,8 @@ export function ProductPurchasePricesPanel({
   );
 
   const infoByUnit = useMemo(
-    () => derivePurchasePrices(units, recordedPrices),
-    [units, recordedPrices],
+    () => derivePurchasePrices(units, recordedPrices, globalFactors),
+    [units, recordedPrices, globalFactors],
   );
 
   const availableUnits = useMemo(
@@ -213,7 +221,13 @@ export function ProductPurchasePricesPanel({
     if (anchorPrice === undefined) {
       return;
     }
-    const price = derivePriceBetween(units, anchorId, targetUomId, anchorPrice);
+    const price = derivePriceBetween(
+      units,
+      anchorId,
+      targetUomId,
+      anchorPrice,
+      globalFactors,
+    );
     if (price !== null) {
       form.setFieldsValue({ purchase_price: price });
     }

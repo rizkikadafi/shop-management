@@ -109,6 +109,8 @@ where id = '00000000-0000-0000-0000-0000000000a3';
 
 -- Reusable units of measure. The base "Piece" row is created by the
 -- categories/uoms migration; the rest are optional catalog entries.
+-- Global conversion links are set below so the seed also works when the
+-- catalog rows already exist.
 insert into public.uoms (id, name, symbol, uom_type)
 values
   ('00000000-0000-0000-0000-0000000000c1', 'Piece', 'pcs', 'unit'),
@@ -119,6 +121,16 @@ values
   ('00000000-0000-0000-0000-0000000000c6', 'Liter', 'L', 'volume'),
   ('00000000-0000-0000-0000-0000000000c7', 'Milliliter', 'mL', 'volume')
 on conflict (id) do nothing;
+
+update public.uoms
+set global_parent_uom_id = '00000000-0000-0000-0000-0000000000c5',
+    global_quantity_in_parent = 1000
+where id = '00000000-0000-0000-0000-0000000000c4';
+
+update public.uoms
+set global_parent_uom_id = '00000000-0000-0000-0000-0000000000c7',
+    global_quantity_in_parent = 1000
+where id = '00000000-0000-0000-0000-0000000000c6';
 
 -- Flat product categories.
 insert into public.categories (id, name)

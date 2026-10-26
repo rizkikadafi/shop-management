@@ -55,6 +55,7 @@ export const META_KEYS = {
   hydratedAt: "hydratedAt",
   lastPulledAt: "lastPulledAt",
   ownerUserId: "ownerUserId",
+  pullSchemaFingerprint: "pullSchemaFingerprint",
 } as const;
 
 export class AppDatabase extends Dexie {

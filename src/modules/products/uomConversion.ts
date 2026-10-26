@@ -1,4 +1,5 @@
 import type { Database } from "../../data/remote/database.types";
+import type { GlobalFactorMap } from "../uoms/uomGlobalConversion";
 
 export type ProductUom = Database["public"]["Tables"]["product_uoms"]["Row"];
 
@@ -8,42 +9,63 @@ export interface UomLike {
   uom_id: string;
   parent_product_uom_id: string | null;
   quantity_in_parent: number | string;
+  conversion_mode?: "global" | "local" | null;
 }
 
 /**
- * Factor that converts 1 of a unit into the product's base unit. It is the
- * product of the `quantity_in_parent` values along the path up to the root
- * (the base row has no parent, so its factor is 1).
+ * Factor that converts 1 of a unit into the product's base unit.
+ *
+ * A `global` row ignores its stored parent and uses the reusable UoM
+ * conversion tree. A `local` row multiplies its own `quantity_in_parent` by
+ * its parent's factor, so it can compose with a global parent. When a global
+ * conversion is unavailable, the stored product tree is used as a fallback.
  *
  * The base unit does not have to be the smallest unit: a unit smaller than the
  * base simply yields a factor below 1.
  */
-export function factorToBaseMap(rows: UomLike[]): Map<string, number> {
+export function factorToBaseMap(
+  rows: UomLike[],
+  globalFactors?: GlobalFactorMap,
+): Map<string, number> {
+  const baseRow = rows.find((row) => row.parent_product_uom_id === null);
   const byId = new Map(rows.map((row) => [row.id, row]));
   const cache = new Map<string, number>();
+  const resolving = new Set<string>();
 
-  const resolve = (startId: string): number => {
-    const cached = cache.get(startId);
+  const resolve = (id: string): number => {
+    const cached = cache.get(id);
     if (cached !== undefined) {
       return cached;
     }
 
-    let factor = 1;
-    let cursor: UomLike | undefined = byId.get(startId);
-    const seen = new Set<string>();
-    let guard = 0;
-
-    while (cursor?.parent_product_uom_id && guard < 1000) {
-      if (seen.has(cursor.id)) {
-        break;
-      }
-      seen.add(cursor.id);
-      factor *= Number(cursor.quantity_in_parent);
-      cursor = byId.get(cursor.parent_product_uom_id);
-      guard += 1;
+    const row = byId.get(id);
+    if (!row || row.parent_product_uom_id === null) {
+      cache.set(id, 1);
+      return 1;
     }
 
-    cache.set(startId, factor);
+    // A cycle should never pass the database trigger, but avoid hanging the
+    // UI if a local/offline snapshot contains one.
+    if (resolving.has(id)) {
+      return 1;
+    }
+    resolving.add(id);
+
+    let factor: number;
+    const globalFactor =
+      row.conversion_mode === "global" && globalFactors && baseRow
+        ? globalFactors.factorToBase(row.uom_id, baseRow.uom_id)
+        : null;
+
+    if (globalFactor !== null) {
+      factor = globalFactor;
+    } else {
+      factor =
+        Number(row.quantity_in_parent) * resolve(row.parent_product_uom_id);
+    }
+
+    resolving.delete(id);
+    cache.set(id, factor);
     return factor;
   };
 
@@ -103,12 +125,18 @@ export function roundCurrency(value: number): number {
  *
  *   price(target) = price(anchor) * factor(target) / factor(anchor)
  *
+ * Global rows are anchored directly to the product base, so a priced sibling
+ * may not be an ancestor or descendant in the stored tree. In that case any
+ * recorded unit is a valid anchor because every product row shares one
+ * conversion base.
+ *
  * Derived values are never persisted; they are recomputed from the recorded
  * prices every time, so they stay correct when conversions change.
  */
 export function derivePurchasePrices(
   rows: UomLike[],
   recorded: Map<string, number>,
+  globalFactors?: GlobalFactorMap,
 ): Map<string, PurchasePriceInfo> {
   const byId = new Map(rows.map((row) => [row.id, row]));
   const childrenByParent = new Map<string, UomLike[]>();
@@ -121,7 +149,7 @@ export function derivePurchasePrices(
     childrenByParent.set(row.parent_product_uom_id, list);
   }
 
-  const factorMap = factorToBaseMap(rows);
+  const factorMap = factorToBaseMap(rows, globalFactors);
 
   const findAnchor = (start: UomLike): string | null => {
     // Walk up to the root first so an ancestor is preferred when it is priced.
@@ -151,6 +179,14 @@ export function derivePurchasePrices(
         return node.id;
       }
       queue.push(...(childrenByParent.get(node.id) ?? []));
+    }
+
+    // A global conversion can place two units side by side under the product
+    // base. Any recorded unit in the same product is still a valid anchor.
+    for (const candidate of rows) {
+      if (candidate.id !== start.id && recorded.has(candidate.id)) {
+        return candidate.id;
+      }
     }
 
     return null;
@@ -190,8 +226,14 @@ export function derivePriceBetween(
   anchorId: string,
   targetId: string,
   anchorPrice: number,
+  globalFactors?: GlobalFactorMap,
 ): number | null {
-  return priceFromFactors(factorToBaseMap(rows), anchorId, targetId, anchorPrice);
+  return priceFromFactors(
+    factorToBaseMap(rows, globalFactors),
+    anchorId,
+    targetId,
+    anchorPrice,
+  );
 }
 
 function priceFromFactors(
@@ -213,6 +255,11 @@ export function formatQuantity(value: number | string): string {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
     return String(value);
+  }
+  // A chained global conversion can be smaller than the stored scale. Do not
+  // render it as zero just because it is below six decimal places.
+  if (parsed !== 0 && Math.abs(parsed) < 0.000001) {
+    return parsed.toExponential(6).replace(/\.?0+e/, "e");
   }
   // Avoid floating point noise while keeping meaningful fractions.
   return Number(parsed.toFixed(6)).toString();

@@ -3,13 +3,17 @@ import { Table, Tag, Typography } from "antd";
 import { useMemo } from "react";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
+import { useUomGlobalFactors } from "../../uoms/useUomGlobalFactors";
 import { derivePurchasePrices } from "../uomConversion";
 
 type ProductPurchasePrice =
   Database["public"]["Tables"]["product_purchase_prices"]["Row"];
 
 type ProductUomRow = Database["public"]["Tables"]["product_uoms"]["Row"] & {
-  uom?: { name?: string | null; symbol?: string | null } | null;
+  uom?: {
+    name?: string | null;
+    symbol?: string | null;
+  } | null;
 };
 
 interface ProductPurchasePricesTableProps {
@@ -27,6 +31,10 @@ export function ProductPurchasePricesTable({
   productId,
 }: ProductPurchasePricesTableProps) {
   const { t, formatCurrency } = useI18n();
+  const {
+    globalFactors,
+    isLoading: uomsLoading,
+  } = useUomGlobalFactors();
 
   const uomQuery = useList<ProductUomRow>({
     resource: "product_uoms",
@@ -35,7 +43,7 @@ export function ProductPurchasePricesTable({
     pagination: { pageSize: 1000 },
     meta: {
       select:
-        "id, product_id, uom_id, parent_product_uom_id, quantity_in_parent, created_at, updated_at, uom:uom_id(name, symbol)",
+        "id, product_id, uom_id, parent_product_uom_id, quantity_in_parent, conversion_mode, created_at, updated_at, uom:uom_id(name, symbol)",
     },
   });
   const units = useMemo(
@@ -54,7 +62,7 @@ export function ProductPurchasePricesTable({
     },
   });
   const prices = useMemo(() => result.data ?? [], [result.data]);
-  const isLoading = query.isLoading || uomQuery.query.isLoading;
+  const isLoading = query.isLoading || uomQuery.query.isLoading || uomsLoading;
 
   const unitById = useMemo(
     () => new Map(units.map((unit) => [unit.id, unit])),
@@ -71,8 +79,8 @@ export function ProductPurchasePricesTable({
     [prices],
   );
   const infoByUnit = useMemo(
-    () => derivePurchasePrices(units, recordedPrices),
-    [units, recordedPrices],
+    () => derivePurchasePrices(units, recordedPrices, globalFactors),
+    [units, recordedPrices, globalFactors],
   );
   const unitFilters = useMemo(
     () =>

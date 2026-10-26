@@ -2,7 +2,6 @@ import type { Session } from "@supabase/supabase-js";
 import {
   db,
   META_KEYS,
-  stripLocalMeta,
   type LocalRow,
   type QueueEntry,
 } from "../local/db";
@@ -14,6 +13,19 @@ import {
 } from "../local/resources";
 import { supabaseClient } from "../remote/supabase";
 import { onSyncRequested } from "./notify";
+
+/**
+ * Fingerprint of the pulled table/column shape. When it changes, the next sync
+ * forces one full re-read so cached rows pick up added or removed columns even
+ * though their remote `updated_at` did not change.
+ */
+const PULL_SCHEMA_FINGERPRINT = JSON.stringify(
+  RESOURCES.filter((config) => config.pull).map((config) => [
+    config.name,
+    config.table,
+    config.columns,
+  ]),
+);
 
 /**
  * Resource-generic sync engine.
@@ -107,11 +119,21 @@ function backoffDelay(attempts: number): number {
   return Math.min(BACKOFF_BASE_MS * 2 ** attempts, BACKOFF_MAX_MS);
 }
 
-/** Strip local metadata and server-managed columns before pushing. */
-function remotePayload(row: LocalRow): Record<string, unknown> {
-  const payload = stripLocalMeta(row);
-  for (const column of SERVER_MANAGED_COLUMNS) {
-    delete payload[column];
+/**
+ * Keep only declared resource columns before pushing. Besides dropping local
+ * metadata and server-managed fields, this makes queued writes from an older
+ * schema safe after a column is renamed or removed.
+ */
+function remotePayload(
+  config: SyncResourceConfig,
+  row: LocalRow,
+): Record<string, unknown> {
+  const payload: Record<string, unknown> = {};
+  for (const column of config.columns) {
+    if (SERVER_MANAGED_COLUMNS.has(column) || row[column] === undefined) {
+      continue;
+    }
+    payload[column] = row[column];
   }
   return payload;
 }
@@ -254,13 +276,29 @@ class SyncService {
         this.updateState({ hydrating: true });
       }
 
+      const pullSchemaFingerprint = await db.sync_meta.get(
+        META_KEYS.pullSchemaFingerprint,
+      );
+      const forcePull =
+        pullSchemaFingerprint?.value !== PULL_SCHEMA_FINGERPRINT;
+
       const pushed = await this.pushQueue();
-      const { changes, tablesPulled } = await this.pullAll();
+      const { changes, tablesPulled } = await this.pullAll(forcePull);
 
       if (tablesPulled > 0) {
         await db.sync_meta.put({ key: META_KEYS.hydratedAt, value: Date.now() });
         await db.sync_meta.put({ key: META_KEYS.lastPulledAt, value: Date.now() });
         this.updateState({ hydrating: false, hydrated: true });
+      }
+
+      if (
+        tablesPulled > 0 &&
+        tablesPulled === RESOURCES.filter((config) => config.pull).length
+      ) {
+        await db.sync_meta.put({
+          key: META_KEYS.pullSchemaFingerprint,
+          value: PULL_SCHEMA_FINGERPRINT,
+        });
       }
 
       this.updateState({ lastSyncedAt: Date.now(), lastError: null });
@@ -362,7 +400,7 @@ class SyncService {
     }
     const { error } = await client
       .from(config.table)
-      .upsert(remotePayload(entry.payload), { onConflict: "id" });
+      .upsert(remotePayload(config, entry.payload), { onConflict: "id" });
     if (error) throw supabaseError(error);
   }
 
@@ -408,7 +446,9 @@ class SyncService {
     }
   }
 
-  private async pullAll(): Promise<{ changes: number; tablesPulled: number }> {
+  private async pullAll(
+    force: boolean,
+  ): Promise<{ changes: number; tablesPulled: number }> {
     let changes = 0;
     let tablesPulled = 0;
 
@@ -424,7 +464,7 @@ class SyncService {
         continue;
       }
       tablesPulled += 1;
-      changes += await this.applyRemote(config, remote);
+      changes += await this.applyRemote(config, remote, force);
     }
 
     return { changes, tablesPulled };
@@ -455,6 +495,7 @@ class SyncService {
   private async applyRemote(
     config: SyncResourceConfig,
     remote: Array<Record<string, unknown>>,
+    force: boolean,
   ): Promise<number> {
     const table = db.resourceTable(config.name);
     const now = new Date().toISOString();
@@ -474,7 +515,7 @@ class SyncService {
         ) {
           continue;
         }
-        if (existing && isUnchanged(existing, record)) {
+        if (existing && !force && isUnchanged(existing, record)) {
           continue;
         }
         await table.put({

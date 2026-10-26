@@ -36,6 +36,17 @@ export interface UomFormValues {
   name: string;
   symbol: string;
   uom_type: UomType;
+  global_parent_uom_id: string | null;
+  global_quantity_in_parent: number | null;
+}
+
+function globalConversion(values: UomFormValues) {
+  const parentId = values.global_parent_uom_id ?? null;
+  return {
+    global_parent_uom_id: parentId,
+    global_quantity_in_parent:
+      parentId === null ? null : (values.global_quantity_in_parent ?? null),
+  };
 }
 
 /** Map a stored UoM into form values. */
@@ -44,6 +55,12 @@ export function toFormValues(uom: Uom): UomFormValues {
     name: uom.name,
     symbol: uom.symbol,
     uom_type: uom.uom_type as UomType,
+    global_parent_uom_id: uom.global_parent_uom_id ?? null,
+    global_quantity_in_parent:
+      uom.global_quantity_in_parent === null ||
+      uom.global_quantity_in_parent === undefined
+        ? null
+        : Number(uom.global_quantity_in_parent),
   };
 }
 
@@ -54,6 +71,7 @@ export function toInsert(values: UomFormValues): UomInsert {
     name: values.name.trim(),
     symbol: values.symbol.trim(),
     uom_type: values.uom_type,
+    ...globalConversion(values),
   };
 }
 
@@ -63,5 +81,6 @@ export function toUpdate(values: UomFormValues): UomUpdate {
     name: values.name.trim(),
     symbol: values.symbol.trim(),
     uom_type: values.uom_type,
+    ...globalConversion(values),
   };
 }

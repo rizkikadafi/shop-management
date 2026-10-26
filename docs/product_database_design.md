@@ -11,7 +11,7 @@ This document defines the relational database design for product management. It 
 
 - Product categories, including nested categories.
 - Products and their base unit of measure (UoM).
-- Product-specific UoM options and hierarchical conversions.
+- Product-specific UoM options, with reusable global conversion trees and per-product overrides.
 - Package-based prices and quantity-based pricing rules.
 - Purchase prices recorded per product UoM, with conversion-based derivation.
 
@@ -21,11 +21,12 @@ The design is intended to remain simple for the initial Product Management modul
 
 1. **Keep entities separate.** Product identity, reusable units, product-specific conversions, and pricing rules belong in separate tables.
 2. **Use a base UoM.** Quantities can be normalized to a product's base unit for inventory and calculations.
-3. **Model conversions per product.** A box may contain 24 pieces for one product and 12 pieces for another.
-4. **Store package prices explicitly.** A package price is the price for the configured package, not automatically the price of one base unit.
-5. **Record purchase prices per unit.** A purchase price belongs to a specific product UoM; prices for units that have none are derived from a recorded price using the conversion hierarchy.
-6. **Use relational constraints.** Foreign keys and unique constraints protect data consistency.
-7. **Use decimal types for quantities and money.** Avoid floating-point types for conversion factors, quantities, and prices.
+3. **Share conversions by default.** Define a reusable global conversion tree once per UoM. Most products inherit it without repeating the same factors.
+4. **Allow explicit local overrides.** A box may contain 24 pieces for one product and 12 pieces for another. Each product UoM chooses `global` or `local` independently.
+5. **Store package prices explicitly.** A package price is the price for the configured package, not automatically the price of one base unit.
+6. **Record purchase prices per unit.** A purchase price belongs to a specific product UoM; prices for units that have none are derived from a recorded price using the conversion hierarchy.
+7. **Use relational constraints.** Foreign keys and unique constraints protect data consistency.
+8. **Use decimal types for quantities and money.** Avoid floating-point types for conversion factors, quantities, and prices.
 
 ## 3. Entity Relationship Diagram
 
@@ -141,10 +142,28 @@ Stores reusable unit definitions.
 | `name` | `text` | Unique, not null | Full unit name |
 | `symbol` | `text` | Unique, not null | Display symbol |
 | `uom_type` | `text` | Not null | Measurement family, such as `unit`, `weight`, or `volume` |
+| `global_parent_uom_id` | `uuid` | Nullable self-reference, same `uom_type`, no cycles | Parent in the reusable global conversion tree |
+| `global_quantity_in_parent` | `numeric(18,6)` | Nullable, greater than zero, set iff the parent is set | How many parent units one of this unit equals globally |
 
 Examples include `Piece (pcs)`, `Pack (pack)`, `Box (box)`, `Kilogram (kg)`, and `Liter (L)`.
 
-Only compatible measurement families should be convertible. For example, converting pieces to kilograms should not be allowed unless the application explicitly models a product-specific weight conversion.
+Only compatible measurement families can be converted. A global parent and child must share the same `uom_type`, and a unit cannot be its own global ancestor. A UoM with global children cannot change its `uom_type` until those child links are removed or reassigned, so an existing tree cannot be split across families.
+
+**Global conversions are reusable defaults for every UoM type.** A UoM with no `global_parent_uom_id` is a root. Each non-root UoM defines its conversion to one parent, and the application multiplies the chain:
+
+| UoM | Global parent | `global_quantity_in_parent` | Meaning |
+|---|---|---:|---|
+| g | — | — | Weight root |
+| kg | g | 1000 | 1 kg = 1000 g |
+| mg | g | 0.001 | 1 mg = 0.001 g |
+| karung | kg | 50 | 1 karung = 50 kg |
+| mL | — | — | Volume root |
+| L | mL | 1000 | 1 L = 1000 mL |
+| pcs | — | — | Unit root |
+| pack | pcs | 6 | Optional shared default: 1 pack = 6 pcs |
+| box | pack | 4 | Optional shared default: 1 box = 4 packs = 24 pcs |
+
+Global conversions are optional. For example, a product may use `pack` and `box` with different quantities, so those UoMs can stay as independent roots and each product can define local conversions instead. The demo seed configures the common metric weight and volume trees because they are normally identical across products.
 
 ### 4.3 `products`
 
@@ -170,8 +189,9 @@ Defines which UoMs are available for a particular product and how they relate hi
 | `id` | `uuid` | Primary key | Product-UoM record identifier |
 | `product_id` | `uuid` | FK to `products.id`, not null | Related product |
 | `uom_id` | `uuid` | FK to `uoms.id`, not null | Unit definition |
-| `parent_product_uom_id` | `uuid` | Nullable self-reference | Immediate parent unit in the hierarchy |
+| `parent_product_uom_id` | `uuid` | Nullable self-reference | Immediate parent unit in the product hierarchy |
 | `quantity_in_parent` | `numeric(18,6)` | Greater than zero | Number of parent units contained in this unit |
+| `conversion_mode` | `text` | `global` or `local`, not null, default `local` | Whether this row inherits the UoM global conversion or uses its stored local conversion |
 
 Example:
 
@@ -185,13 +205,28 @@ For this example, `quantity_in_parent` means the number of parent units represen
 
 **The base UoM does not have to be the smallest unit.** The base is simply the root of the conversion tree; a unit smaller than the base stores a fractional `quantity_in_parent` (for example `1 pcs = 0.041667 box` when `box` is the base). Conversions are always resolved by multiplying `quantity_in_parent` along the path up to the base.
 
-Enforced rules (see migration `20261014120000_product_uom_tree_integrity.sql`):
+**Each product row chooses its conversion source independently.** This is what allows a product to inherit global metric conversions while overriding just one unit:
+
+| Product UoM | Mode | Stored link | Effective factor to base |
+|---|---|---|---|
+| kg (base) | global or local | root | 1 |
+| g | `global` | direct child of base, snapshot factor 0.001 | uses global `g -> kg` |
+| karung | `local` | parent kg, `quantity_in_parent = 25` | 25 kg |
+| L | `global` | direct child of base if the base is a volume unit | uses global `L -> mL` |
+
+- A `global` row ignores its stored `parent_product_uom_id` and `quantity_in_parent` for conversion. It resolves the unit through the global UoM tree relative to the product base. Editing `kg` or `L` once therefore updates every inheriting product. The stored values are still kept as a snapshot because the product tree constraints and price rules require a connected hierarchy.
+- A `local` row uses its stored `parent_product_uom_id` and `quantity_in_parent`. A local row may point at a global row, in which case the ancestor's global factor is used. For example, `1 karung = 25 kg` remains local while `kg` continues to inherit the global tree.
+- If a global conversion is unavailable (for example, the product uses a different global root), a `global` row falls back to its stored local tree so the product remains usable. The UI shows the effective source.
+- Switching a row to local prefills the current global factor, so the user only adjusts the value that differs. A "Use global" action restores inheritance.
+
+Enforced rules (see `20261014120000_product_uom_tree_integrity.sql` and `20261026120000_global_uom_conversions.sql`):
 
 - A product has exactly one parentless row per `product_uoms` tree, and it must be the row for `products.base_uom_id` with `quantity_in_parent = 1`. This is checked by a deferred constraint trigger at commit time.
 - Every non-base UoM therefore has a parent.
 - A UoM cannot be its own ancestor, directly or indirectly (cycle guard trigger).
 - A parent's UoM and child's UoM must share the same `uoms.uom_type` (measurement family).
 - A product must not have duplicate UoM definitions (unique `(product_id, uom_id)`).
+- Global parents use the same family and cycle rules; the parent and quantity are both null (root) or both set.
 
 Changing `products.base_uom_id` to a unit that is already part of the product re-roots the tree: the path from the new base up to the old root is reversed and each factor inverted, so relative conversions and existing price rules are preserved. Changing the base to an unrelated unit is rejected while the product still has other units or price rules; add the desired base as a unit first, then promote it.
 
@@ -241,7 +276,7 @@ Enforced rules (see migration `20261014130000_product_purchase_prices.sql`):
 - Composite foreign key `(product_uom_id, product_id)` ensures the referenced UoM belongs to the same product.
 - Deleting a product UoM cascades to its recorded purchase price (`on delete cascade`).
 
-**Derivation, not duplication.** Only explicitly recorded prices are stored. A unit without a row can be priced by the application from any recorded price in the same conversion tree:
+**Derivation, not duplication.** Only explicitly recorded prices are stored. A unit without a row can be priced by the application from any recorded price for the same product, because every product UoM row shares the same base conversion:
 
 ```text
 price(unit) = price(anchor) × factor(unit) ÷ factor(anchor)
@@ -316,7 +351,15 @@ create table uoms (
   name text not null unique,
   symbol text not null unique,
   uom_type text not null
-    check (uom_type in ('unit', 'weight', 'volume'))
+    check (uom_type in ('unit', 'weight', 'volume')),
+  global_parent_uom_id uuid references uoms(id),
+  global_quantity_in_parent numeric(18, 6)
+    check (global_quantity_in_parent is null or global_quantity_in_parent > 0),
+  check (global_parent_uom_id is null or global_parent_uom_id <> id),
+  check (
+    (global_parent_uom_id is null and global_quantity_in_parent is null)
+    or (global_parent_uom_id is not null and global_quantity_in_parent is not null)
+  )
 );
 
 create table products (
@@ -335,6 +378,8 @@ create table product_uoms (
   parent_product_uom_id uuid,
   quantity_in_parent numeric(18, 6) not null
     check (quantity_in_parent > 0),
+  conversion_mode text not null default 'local'
+    check (conversion_mode in ('global', 'local')),
 
   unique (product_id, uom_id),
   unique (id, product_id),
@@ -403,8 +448,8 @@ Before production, implement and test these rules:
 
 The database stores the canonical product, UoM, and price-rule data. The application is responsible for:
 
-- Showing product UoM hierarchies in a readable form.
-- Calculating conversions between a selected UoM and the base UoM.
+- Showing product UoM hierarchies and whether each row is global or local.
+- Calculating effective conversions by resolving global UoMs relative to the product base, then composing any local overrides.
 - Deriving a purchase price for units without a recorded price from a recorded price and the conversion hierarchy.
 - Selecting an applicable price rule consistently.
 - Validating package multiples when required.

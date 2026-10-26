@@ -3,12 +3,16 @@ import { Space, Table, Tag } from "antd";
 import { useMemo } from "react";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
+import { useUomGlobalFactors } from "../../uoms/useUomGlobalFactors";
 import { factorToBaseMap, formatQuantity } from "../uomConversion";
 
 type ProductUom = Database["public"]["Tables"]["product_uoms"]["Row"];
 
 type ProductUomRow = ProductUom & {
-  uom?: { name?: string | null; symbol?: string | null } | null;
+  uom?: {
+    name?: string | null;
+    symbol?: string | null;
+  } | null;
 };
 
 interface ProductUnitsTableProps {
@@ -25,6 +29,7 @@ export function ProductUnitsTable({
   baseUomId,
 }: ProductUnitsTableProps) {
   const { t } = useI18n();
+  const { globalFactors, isLoading: uomsLoading } = useUomGlobalFactors();
   const { query, result } = useList<ProductUomRow>({
     resource: "product_uoms",
     filters: [{ field: "product_id", operator: "eq", value: productId }],
@@ -32,14 +37,17 @@ export function ProductUnitsTable({
     pagination: { pageSize: 1000 },
     meta: {
       select:
-        "id, product_id, uom_id, parent_product_uom_id, quantity_in_parent, created_at, updated_at, uom:uom_id(name, symbol)",
+        "id, product_id, uom_id, parent_product_uom_id, quantity_in_parent, conversion_mode, created_at, updated_at, uom:uom_id(name, symbol)",
     },
   });
 
   const rows = useMemo(() => result.data ?? [], [result.data]);
-  const isLoading = query.isLoading;
+  const isLoading = query.isLoading || uomsLoading;
 
-  const factorMap = useMemo(() => factorToBaseMap(rows), [rows]);
+  const factorMap = useMemo(
+    () => factorToBaseMap(rows, globalFactors),
+    [rows, globalFactors],
+  );
   const baseRow = useMemo(
     () => rows.find((row) => row.uom_id === baseUomId),
     [rows, baseUomId],
@@ -70,6 +78,11 @@ export function ProductUnitsTable({
   };
 
   const isBase = (row: ProductUomRow) => row.uom_id === baseUomId;
+  const modeOf = (row: ProductUomRow) =>
+    row.conversion_mode === "global" &&
+    globalFactors.factorToBase(row.uom_id, baseUomId) !== null
+      ? "global"
+      : "local";
 
   return (
     <Table<ProductUomRow>
@@ -91,6 +104,24 @@ export function ProductUnitsTable({
             {isBase(row) && <Tag color="green">{t("productUnits.base")}</Tag>}
           </Space>
         )}
+      />
+      <Table.Column<ProductUomRow>
+        title={t("productUnits.source")}
+        render={(_, row) => {
+          if (isBase(row)) {
+            return t("common.none");
+          }
+          const mode = modeOf(row);
+          return (
+            <Tag color={mode === "global" ? "blue" : "gold"}>
+              {t(
+                mode === "global"
+                  ? "productUnits.global"
+                  : "productUnits.local",
+              )}
+            </Tag>
+          );
+        }}
       />
       <Table.Column<ProductUomRow>
         title={t("productUnits.conversion")}

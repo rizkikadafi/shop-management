@@ -140,6 +140,20 @@ export const id: TranslationSchema = {
     optionalPlaceholder: "Opsional",
     quantityInParent: "Kuantitas dalam induk",
     conversion: "Konversi",
+    source: "Sumber",
+    global: "Global",
+    local: "Lokal",
+    conversionSource: "Sumber konversi",
+    globalConversion: "Konversi global: 1 {unit} = {factor} {base}",
+    globalConversionHint:
+      "Konversi ini digunakan bersama oleh semua produk. Ubah di Satuan Ukur.",
+    useGlobal: "Gunakan global",
+    useGlobalConfirm: "Gunakan konversi global?",
+    useGlobalConfirmDescription:
+      "Override lokal akan dihapus dan satuan ini kembali mengikuti konversi bersama.",
+    globalApplied: "Konversi global diterapkan",
+    globalAppliedDescription:
+      "Satuan produk ini sekarang mengikuti konversi bersama.",
     base: "Dasar",
     actions: "Aksi",
     removeConfirm: "Hapus satuan ini?",
@@ -157,7 +171,7 @@ export const id: TranslationSchema = {
     setAsBase: "Jadikan satuan dasar",
     setAsBaseConfirm: "Jadikan satuan dasar?",
     setAsBaseConfirmDescription:
-      "Konversi antar satuan yang ada tetap dipertahankan dan aturan harga tetap berlaku.",
+      "Konversi antar satuan yang ada tetap dipertahankan dan aturan harga tetap berlaku. Baris global dapat dihitung ulang dari konversi bersama.",
     baseChanged: "Satuan dasar diperbarui",
     baseChangedDescription:
       "Satuan dasar diubah dan konversi dihitung ulang.",
@@ -260,6 +274,7 @@ export const id: TranslationSchema = {
       name: "Nama",
       symbol: "Simbol",
       type: "Tipe",
+      conversion: "Konversi",
       actions: "Aksi",
     },
     form: {
@@ -268,6 +283,19 @@ export const id: TranslationSchema = {
       symbol: "Simbol",
       symbolPlaceholder: "mis. kg",
       type: "Tipe",
+      globalParent: "Induk global",
+      globalParentPlaceholder: "Tanpa induk global (satuan akar)",
+      globalParentHint:
+        "Opsional. Induk harus memakai tipe ukuran yang sama.",
+      parentFallback: "induk",
+      globalQuantity: "Kuantitas dalam {parent}",
+      globalQuantityPlaceholder: "mis. 1000",
+      globalQuantityHint:
+        "Berapa satuan induk yang membentuk 1 satuan ini?",
+      globalConversionHint:
+        "Konversi ini digunakan bersama oleh semua produk. Satuan produk dapat meng-override-nya secara lokal.",
+      typeLockedByChildren:
+        "Hapus atau pindahkan konversi anak global satuan ini sebelum mengubah tipenya.",
     },
     types: {
       unit: "Satuan",
@@ -280,6 +308,8 @@ export const id: TranslationSchema = {
       symbolRequired: "Simbol wajib diisi.",
       symbolMax: "Simbol maksimal {max} karakter.",
       typeRequired: "Tipe wajib diisi.",
+      globalQuantityRequired: "Kuantitas wajib diisi jika induk global dipilih.",
+      globalQuantityMin: "Kuantitas harus lebih besar dari nol.",
     },
   },
   users: {

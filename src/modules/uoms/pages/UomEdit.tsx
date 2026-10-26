@@ -5,7 +5,7 @@ import { toUpdate, type Uom, type UomFormValues } from "../uom.schema";
 import { UomFormFields } from "../components/UomFormFields";
 
 export function UomEdit() {
-  const { formProps, saveButtonProps, onFinish } = useForm<
+  const { formProps, saveButtonProps, onFinish, query } = useForm<
     Uom,
     HttpError,
     UomFormValues
@@ -22,7 +22,7 @@ export function UomEdit() {
   return (
     <Edit saveButtonProps={saveButtonProps}>
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
-        <UomFormFields />
+        <UomFormFields currentUomId={query?.data?.data?.id} />
       </Form>
     </Edit>
   );

@@ -10,9 +10,11 @@ import {
   type UomType,
 } from "../uom.schema";
 import { UOM_FILTER_COLUMNS } from "../uom.filters";
+import { useUomGlobalFactors } from "../useUomGlobalFactors";
 
 export function UomList() {
-  const { t } = useI18n();
+  const { t, formatNumber } = useI18n();
+  const { uomById, isLoading: uomsLoading } = useUomGlobalFactors();
   const { tableProps, filters, setFilters, setCurrentPage } = useTable<
     Uom,
     HttpError
@@ -39,7 +41,12 @@ export function UomList() {
         <CreateButton>{t("uoms.create")}</CreateButton>
       }
     >
-      <Table {...tableProps} rowKey="id" scroll={{ x: "max-content" }}>
+      <Table
+        {...tableProps}
+        loading={tableProps.loading || uomsLoading}
+        rowKey="id"
+        scroll={{ x: "max-content" }}
+      >
         <Table.Column
           dataIndex="name"
           title={t("uoms.columns.name")}
@@ -59,6 +66,20 @@ export function UomList() {
             </Tag>
           )}
           {...filterProps("uom_type")}
+        />
+        <Table.Column
+          title={t("uoms.columns.conversion")}
+          render={(_, record: Uom) => {
+            const parent = record.global_parent_uom_id
+              ? uomById.get(record.global_parent_uom_id)
+              : undefined;
+            if (!parent || record.global_quantity_in_parent === null) {
+              return t("common.none");
+            }
+            return `1 ${record.symbol} = ${formatNumber(
+              record.global_quantity_in_parent,
+            )} ${parent.symbol}`;
+          }}
         />
         <Table.Column
           title={t("uoms.columns.actions")}

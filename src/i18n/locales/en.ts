@@ -137,6 +137,20 @@ export const en = {
     optionalPlaceholder: "Optional",
     quantityInParent: "Quantity in parent",
     conversion: "Conversion",
+    source: "Source",
+    global: "Global",
+    local: "Local",
+    conversionSource: "Conversion source",
+    globalConversion: "Global conversion: 1 {unit} = {factor} {base}",
+    globalConversionHint:
+      "This conversion is shared by every product. Edit it in Units of Measure.",
+    useGlobal: "Use global",
+    useGlobalConfirm: "Use the global conversion?",
+    useGlobalConfirmDescription:
+      "The local override will be removed and this unit will follow the shared conversion again.",
+    globalApplied: "Global conversion applied",
+    globalAppliedDescription:
+      "This product unit now follows the shared conversion.",
     base: "Base",
     actions: "Actions",
     removeConfirm: "Remove this unit?",
@@ -154,7 +168,7 @@ export const en = {
     setAsBase: "Set as base",
     setAsBaseConfirm: "Set as base unit?",
     setAsBaseConfirmDescription:
-      "Conversions between existing units are kept and price rules keep working.",
+      "Conversions between existing units are kept and price rules keep working. Global rows may recalculate from the shared conversion.",
     baseChanged: "Base unit updated",
     baseChangedDescription: "The base unit was changed and conversions recalculated.",
     parentHint:
@@ -256,6 +270,7 @@ export const en = {
       name: "Name",
       symbol: "Symbol",
       type: "Type",
+      conversion: "Conversion",
       actions: "Actions",
     },
     form: {
@@ -264,6 +279,19 @@ export const en = {
       symbol: "Symbol",
       symbolPlaceholder: "e.g. kg",
       type: "Type",
+      globalParent: "Global parent",
+      globalParentPlaceholder: "No global parent (root unit)",
+      globalParentHint:
+        "Optional. The parent must use the same measurement type.",
+      parentFallback: "parent",
+      globalQuantity: "Quantity in {parent}",
+      globalQuantityPlaceholder: "e.g. 1000",
+      globalQuantityHint:
+        "How many parent units make up 1 of this unit?",
+      globalConversionHint:
+        "This conversion is shared by every product. Individual product units can override it locally.",
+      typeLockedByChildren:
+        "Remove or reassign this unit's global child conversions before changing its type.",
     },
     types: {
       unit: "Unit",
@@ -276,6 +304,8 @@ export const en = {
       symbolRequired: "Symbol is required.",
       symbolMax: "Symbol must be {max} characters or fewer.",
       typeRequired: "Type is required.",
+      globalQuantityRequired: "Quantity is required when a global parent is set.",
+      globalQuantityMin: "Quantity must be greater than zero.",
     },
   },
   users: {
