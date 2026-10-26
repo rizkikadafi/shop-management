@@ -42,9 +42,16 @@ export function CategoryList() {
         />
         <Table.Column
           title={t("categories.columns.actions")}
+          width={64}
+          align="center"
           render={(_, record: Category) => (
             <Space>
-              <EditButton hideText size="small" recordItemId={record.id} />
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record.id}
+                title={t("common.edit")}
+              />
             </Space>
           )}
         />

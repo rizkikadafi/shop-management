@@ -83,9 +83,16 @@ export function UomList() {
         />
         <Table.Column
           title={t("uoms.columns.actions")}
+          width={64}
+          align="center"
           render={(_, record: Uom) => (
             <Space>
-              <EditButton hideText size="small" recordItemId={record.id} />
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record.id}
+                title={t("common.edit")}
+              />
             </Space>
           )}
         />

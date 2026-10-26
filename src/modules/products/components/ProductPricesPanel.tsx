@@ -5,9 +5,19 @@ import {
   useList,
   useUpdate,
 } from "@refinedev/core";
-import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Table } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  Space,
+  Table,
+} from "antd";
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMemo, useState } from "react";
+import { RowActions } from "../../../components/RowActions";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
 
@@ -201,31 +211,41 @@ export function ProductPricesPanel({ productId }: ProductPricesPanelProps) {
         />
         <Table.Column<PriceRow>
           title={t("productPrices.minQty")}
-          align="right"
           dataIndex="min_quantity"
         />
         <Table.Column<PriceRow>
           title={t("productPrices.price")}
-          align="right"
           render={(_, row) => formatCurrency(row.package_price)}
         />
         <Table.Column<PriceRow>
           title={t("productPrices.actions")}
+          width={80}
+          align="center"
           render={(_, row) =>
             canWrite ? (
-              <Space>
-                <Button size="small" onClick={() => openEdit(row)}>
-                  {t("common.edit")}
-                </Button>
-                <Popconfirm
-                  title={t("productPrices.removeConfirm")}
-                  onConfirm={() => handleDelete(row)}
-                >
-                  <Button size="small" danger>
-                    {t("common.remove")}
-                  </Button>
-                </Popconfirm>
-              </Space>
+              <RowActions
+                moreLabel={t("common.moreActions")}
+                maxInline={2}
+                actions={[
+                  {
+                    key: "edit",
+                    label: t("common.edit"),
+                    icon: <EditOutlined />,
+                    onClick: () => openEdit(row),
+                  },
+                  {
+                    key: "remove",
+                    label: t("common.remove"),
+                    icon: <DeleteOutlined />,
+                    danger: true,
+                    confirm: {
+                      title: t("productPrices.removeConfirm"),
+                      okText: t("common.remove"),
+                    },
+                    onClick: () => handleDelete(row),
+                  },
+                ]}
+              />
             ) : null
           }
         />

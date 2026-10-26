@@ -70,9 +70,16 @@ export function UserList() {
         />
         <Table.Column
           title={t("users.columns.actions")}
+          width={64}
+          align="center"
           render={(_, record: Profile) => (
             <Space>
-              <EditButton hideText size="small" recordItemId={record.id} />
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record.id}
+                title={t("common.edit")}
+              />
             </Space>
           )}
         />

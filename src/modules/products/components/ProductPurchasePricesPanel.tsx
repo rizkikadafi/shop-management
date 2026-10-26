@@ -11,15 +11,20 @@ import {
   Form,
   InputNumber,
   Modal,
-  Popconfirm,
   Select,
   Space,
   Table,
   Tag,
   Typography,
 } from "antd";
-import { CalculatorOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  CalculatorOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
 import { useMemo, useState } from "react";
+import { RowActions } from "../../../components/RowActions";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
 import { useUomGlobalFactors } from "../../uoms/useUomGlobalFactors";
@@ -145,18 +150,18 @@ export function ProductPurchasePricesPanel({
     () =>
       editing
         ? [
-            {
-              value: editing.product_uom_id,
-              label: labelOf(
-                unitById.get(editing.product_uom_id),
-                editing.product_uom_id,
-              ),
-            },
-          ]
+          {
+            value: editing.product_uom_id,
+            label: labelOf(
+              unitById.get(editing.product_uom_id),
+              editing.product_uom_id,
+            ),
+          },
+        ]
         : availableUnits.map((unit) => ({
-            value: unit.id,
-            label: labelOf(unit, unit.id),
-          })),
+          value: unit.id,
+          label: labelOf(unit, unit.id),
+        })),
     [editing, availableUnits, unitById],
   );
 
@@ -367,7 +372,6 @@ export function ProductPurchasePricesPanel({
         />
         <Table.Column<ProductUomRow>
           title={t("purchasePrices.price")}
-          align="right"
           render={(_, unit) => {
             const info = infoByUnit.get(unit.id);
             if (!info || info.price === null) {
@@ -409,6 +413,8 @@ export function ProductPurchasePricesPanel({
         />
         <Table.Column<ProductUomRow>
           title={t("purchasePrices.actions")}
+          width={80}
+          align="center"
           render={(_, unit) => {
             if (!canWrite) {
               return null;
@@ -416,25 +422,43 @@ export function ProductPurchasePricesPanel({
             const row = priceByUom.get(unit.id);
             if (row) {
               return (
-                <Space>
-                  <Button size="small" onClick={() => openEdit(row)}>
-                    {t("common.edit")}
-                  </Button>
-                  <Popconfirm
-                    title={t("purchasePrices.removeConfirm")}
-                    onConfirm={() => handleDelete(row)}
-                  >
-                    <Button size="small" danger>
-                      {t("common.remove")}
-                    </Button>
-                  </Popconfirm>
-                </Space>
+                <RowActions
+                  moreLabel={t("common.moreActions")}
+                  maxInline={2}
+                  actions={[
+                    {
+                      key: "edit",
+                      label: t("common.edit"),
+                      icon: <EditOutlined />,
+                      onClick: () => openEdit(row),
+                    },
+                    {
+                      key: "remove",
+                      label: t("common.remove"),
+                      icon: <DeleteOutlined />,
+                      danger: true,
+                      confirm: {
+                        title: t("purchasePrices.removeConfirm"),
+                        okText: t("common.remove"),
+                      },
+                      onClick: () => handleDelete(row),
+                    },
+                  ]}
+                />
               );
             }
             return (
-              <Button size="small" onClick={() => openRecord(unit.id)}>
-                {t("purchasePrices.record")}
-              </Button>
+              <RowActions
+                moreLabel={t("common.moreActions")}
+                actions={[
+                  {
+                    key: "record",
+                    label: t("purchasePrices.record"),
+                    icon: <PlusOutlined />,
+                    onClick: () => openRecord(unit.id),
+                  },
+                ]}
+              />
             );
           }}
         />

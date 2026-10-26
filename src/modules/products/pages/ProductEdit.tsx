@@ -1,6 +1,7 @@
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import { useCan, useList, type HttpError } from "@refinedev/core";
-import { Divider, Form, Input, InputNumber, Space, Switch } from "antd";
+import { Form, Input, InputNumber, Switch, Tabs } from "antd";
+import { useState } from "react";
 import { useI18n } from "../../../i18n/useI18n";
 import { QuickCreateSelect } from "../../../components/QuickCreateSelect";
 import {
@@ -25,6 +26,7 @@ import { ProductPurchasePricesPanel } from "../components/ProductPurchasePricesP
 
 export function ProductEdit() {
   const { t, currencySymbol } = useI18n();
+  const [activeTab, setActiveTab] = useState("general");
   const { formProps, saveButtonProps, onFinish, query } = useForm<
     Product,
     HttpError,
@@ -77,140 +79,185 @@ export function ProductEdit() {
 
   return (
     <Edit saveButtonProps={saveButtonProps}>
-      <Form {...formProps} layout="vertical" onFinish={handleFinish}>
-        <Form.Item
-          label={t("products.form.name")}
-          name="name"
-          rules={[
-            { required: true, message: t("products.validation.nameRequired") },
-            {
-              max: PRODUCT_LIMITS.name,
-              message: t("products.validation.nameMax", {
-                max: PRODUCT_LIMITS.name,
-              }),
-            },
-          ]}
-        >
-          <Input placeholder={t("products.form.namePlaceholder")} />
-        </Form.Item>
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={[
+          {
+            key: "general",
+            label: t("products.show.general"),
+            children: (
+              <Form
+                {...formProps}
+                layout="vertical"
+                onFinish={handleFinish}
+                onFinishFailed={() => setActiveTab("general")}
+              >
+                <Form.Item
+                  label={t("products.form.name")}
+                  name="name"
+                  rules={[
+                    {
+                      required: true,
+                      message: t("products.validation.nameRequired"),
+                    },
+                    {
+                      max: PRODUCT_LIMITS.name,
+                      message: t("products.validation.nameMax", {
+                        max: PRODUCT_LIMITS.name,
+                      }),
+                    },
+                  ]}
+                >
+                  <Input placeholder={t("products.form.namePlaceholder")} />
+                </Form.Item>
 
-        <Form.Item
-          label={t("products.form.sku")}
-          name="sku"
-          rules={[
-            {
-              max: PRODUCT_LIMITS.sku,
-              message: t("products.validation.skuMax", { max: PRODUCT_LIMITS.sku }),
-            },
-          ]}
-        >
-          <Input placeholder={t("products.form.skuPlaceholder")} />
-        </Form.Item>
+                <Form.Item
+                  label={t("products.form.sku")}
+                  name="sku"
+                  rules={[
+                    {
+                      max: PRODUCT_LIMITS.sku,
+                      message: t("products.validation.skuMax", {
+                        max: PRODUCT_LIMITS.sku,
+                      }),
+                    },
+                  ]}
+                >
+                  <Input placeholder={t("products.form.skuPlaceholder")} />
+                </Form.Item>
 
-        <Form.Item
-          label={t("products.form.description")}
-          name="description"
-          rules={[
-            {
-              max: PRODUCT_LIMITS.description,
-              message: t("products.validation.descriptionMax", {
-                max: PRODUCT_LIMITS.description,
-              }),
-            },
-          ]}
-        >
-          <Input.TextArea
-            rows={3}
-            placeholder={t("products.form.descriptionPlaceholder")}
-          />
-        </Form.Item>
+                <Form.Item
+                  label={t("products.form.description")}
+                  name="description"
+                  rules={[
+                    {
+                      max: PRODUCT_LIMITS.description,
+                      message: t("products.validation.descriptionMax", {
+                        max: PRODUCT_LIMITS.description,
+                      }),
+                    },
+                  ]}
+                >
+                  <Input.TextArea
+                    rows={3}
+                    placeholder={t("products.form.descriptionPlaceholder")}
+                  />
+                </Form.Item>
 
-        <Form.Item
-          label={t("products.form.price")}
-          name="price"
-          rules={[
-            { required: true, message: t("products.validation.priceRequired") },
-            {
-              type: "number",
-              min: 0,
-              message: t("products.validation.priceMin"),
-            },
-          ]}
-        >
-          <InputNumber
-            min={0}
-            step={0.01}
-            precision={2}
-            style={{ width: "100%" }}
-            addonBefore={currencySymbol}
-          />
-        </Form.Item>
+                <Form.Item
+                  label={t("products.form.price")}
+                  name="price"
+                  rules={[
+                    {
+                      required: true,
+                      message: t("products.validation.priceRequired"),
+                    },
+                    {
+                      type: "number",
+                      min: 0,
+                      message: t("products.validation.priceMin"),
+                    },
+                  ]}
+                >
+                  <InputNumber
+                    min={0}
+                    step={0.01}
+                    precision={2}
+                    style={{ width: "100%" }}
+                    addonBefore={currencySymbol}
+                  />
+                </Form.Item>
 
-        <Form.Item label={t("products.form.category")} name="category_id">
-          <QuickCreateSelect<CategoryFormValues>
-            {...categorySelectProps}
-            allowClear
-            placeholder={t("products.form.categoryPlaceholder")}
-            resource="categories"
-            fieldName="category_id"
-            canCreate={categoryCanCreate?.can ?? false}
-            modalTitle={t("categories.create")}
-            createLabel={t("categories.quickCreate")}
-            fields={<CategoryFormFields />}
-            prefill={(search) => ({ name: search })}
-            toValues={(values) => toCategoryInsert(values)}
-            onRefetch={categoryQuery.refetch}
-          />
-        </Form.Item>
+                <Form.Item
+                  label={t("products.form.category")}
+                  name="category_id"
+                >
+                  <QuickCreateSelect<CategoryFormValues>
+                    {...categorySelectProps}
+                    allowClear
+                    placeholder={t("products.form.categoryPlaceholder")}
+                    resource="categories"
+                    fieldName="category_id"
+                    canCreate={categoryCanCreate?.can ?? false}
+                    modalTitle={t("categories.create")}
+                    createLabel={t("categories.quickCreate")}
+                    fields={<CategoryFormFields />}
+                    prefill={(search) => ({ name: search })}
+                    toValues={(values) => toCategoryInsert(values)}
+                    onRefetch={categoryQuery.refetch}
+                  />
+                </Form.Item>
 
-        <Form.Item
-          label={t("products.form.baseUom")}
-          name="base_uom_id"
-          extra={hasOtherUnits ? t("products.form.baseUomLocked") : undefined}
-          rules={[
-            { required: true, message: t("products.validation.baseUomRequired") },
-          ]}
-        >
-          <QuickCreateSelect<UomFormValues>
-            {...uomSelectProps}
-            disabled={hasOtherUnits}
-            placeholder={t("products.form.baseUomPlaceholder")}
-            resource="uoms"
-            fieldName="base_uom_id"
-            canCreate={uomCanCreate?.can ?? false}
-            modalTitle={t("uoms.create")}
-            createLabel={t("uoms.quickCreate")}
-            fields={<UomFormFields />}
-            defaults={{ uom_type: "unit" }}
-            prefill={(search) => ({ name: search })}
-            toValues={(values) => toUomInsert(values)}
-            onRefetch={uomQuery.refetch}
-          />
-        </Form.Item>
+                <Form.Item
+                  label={t("products.form.baseUom")}
+                  name="base_uom_id"
+                  extra={
+                    hasOtherUnits
+                      ? t("products.form.baseUomLocked")
+                      : undefined
+                  }
+                  rules={[
+                    {
+                      required: true,
+                      message: t("products.validation.baseUomRequired"),
+                    },
+                  ]}
+                >
+                  <QuickCreateSelect<UomFormValues>
+                    {...uomSelectProps}
+                    disabled={hasOtherUnits}
+                    placeholder={t("products.form.baseUomPlaceholder")}
+                    resource="uoms"
+                    fieldName="base_uom_id"
+                    canCreate={uomCanCreate?.can ?? false}
+                    modalTitle={t("uoms.create")}
+                    createLabel={t("uoms.quickCreate")}
+                    fields={<UomFormFields />}
+                    defaults={{ uom_type: "unit" }}
+                    prefill={(search) => ({ name: search })}
+                    toValues={(values) => toUomInsert(values)}
+                    onRefetch={uomQuery.refetch}
+                  />
+                </Form.Item>
 
-        <Form.Item
-          label={t("products.form.active")}
-          name="is_active"
-          valuePropName="checked"
-        >
-          <Switch />
-        </Form.Item>
-      </Form>
-
-      {record && (
-        <>
-          <Divider />
-          <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            <ProductUomsPanel
-              productId={record.id}
-              baseUomId={record.base_uom_id}
-              onBaseUomChange={() => unitsQuery.refetch()}
-            />
-            <ProductPricesPanel productId={record.id} />
-            <ProductPurchasePricesPanel productId={record.id} />
-          </Space>
-        </>
-      )}
+                <Form.Item
+                  label={t("products.form.active")}
+                  name="is_active"
+                  valuePropName="checked"
+                >
+                  <Switch />
+                </Form.Item>
+              </Form>
+            ),
+          },
+          {
+            key: "units",
+            label: t("products.show.units"),
+            children: record ? (
+              <ProductUomsPanel
+                productId={record.id}
+                baseUomId={record.base_uom_id}
+                onBaseUomChange={() => unitsQuery.refetch()}
+              />
+            ) : null,
+          },
+          {
+            key: "pricing",
+            label: t("products.show.pricing"),
+            children: record ? (
+              <ProductPricesPanel productId={record.id} />
+            ) : null,
+          },
+          {
+            key: "purchase",
+            label: t("products.show.purchase"),
+            children: record ? (
+              <ProductPurchasePricesPanel productId={record.id} />
+            ) : null,
+          },
+        ]}
+      />
     </Edit>
   );
 }

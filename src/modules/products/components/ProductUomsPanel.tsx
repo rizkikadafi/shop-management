@@ -11,7 +11,6 @@ import {
   Form,
   InputNumber,
   Modal,
-  Popconfirm,
   Segmented,
   Select,
   Space,
@@ -19,8 +18,15 @@ import {
   Tag,
   Typography,
 } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  GlobalOutlined,
+  PlusOutlined,
+  StarOutlined,
+} from "@ant-design/icons";
 import { useMemo, useState } from "react";
+import { RowActions, type RowAction } from "../../../components/RowActions";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
 import type { Uom, UomType } from "../../uoms/uom.schema";
@@ -157,10 +163,10 @@ function UnitFormModal({
       }));
     return editing
       ? options.filter(
-          (option) =>
-            option.value === editing.uom_id ||
-            !assignedUomIds.has(option.value),
-        )
+        (option) =>
+          option.value === editing.uom_id ||
+          !assignedUomIds.has(option.value),
+      )
       : options.filter((option) => !assignedUomIds.has(option.value));
   }, [uomRecords, editing, assignedUomIds, baseUom?.uom_type]);
 
@@ -302,10 +308,10 @@ function UnitFormModal({
         initialValues={
           editing
             ? {
-                uom_id: editing.uom_id,
-                parent_product_uom_id: editing.parent_product_uom_id ?? null,
-                quantity_in_parent: Number(editing.quantity_in_parent),
-              }
+              uom_id: editing.uom_id,
+              parent_product_uom_id: editing.parent_product_uom_id ?? null,
+              quantity_in_parent: Number(editing.quantity_in_parent),
+            }
             : {}
         }
         onFinish={handleFinish}
@@ -501,7 +507,7 @@ export function ProductUomsPanel({
 
   const rowMode = (row: ProductUomRow): ConversionMode =>
     row.conversion_mode === "global" &&
-    globalFactors.factorToBase(row.uom_id, baseUomId) !== null
+      globalFactors.factorToBase(row.uom_id, baseUomId) !== null
       ? "global"
       : "local";
 
@@ -702,7 +708,6 @@ export function ProductUomsPanel({
         />
         <Table.Column<ProductUomRow>
           title={t("productUnits.quantityInParent")}
-          align="right"
           render={(_, row) => {
             if (isBaseRow(row)) {
               return "1";
@@ -714,7 +719,6 @@ export function ProductUomsPanel({
         />
         <Table.Column<ProductUomRow>
           title={t("productUnits.conversion")}
-          align="right"
           render={(_, row) => {
             if (isBaseRow(row)) {
               return t("common.none");
@@ -727,41 +731,71 @@ export function ProductUomsPanel({
         />
         <Table.Column<ProductUomRow>
           title={t("productUnits.actions")}
-          render={(_, row) =>
-            isBaseRow(row) || !canWrite ? null : (
-              <Space>
-                <Button size="small" onClick={() => openEdit(row)}>
-                  {t("common.edit")}
-                </Button>
-                {canUseGlobal(row) && (
-                  <Popconfirm
-                    title={t("productUnits.useGlobalConfirm")}
-                    description={t(
-                      "productUnits.useGlobalConfirmDescription",
-                    )}
-                    onConfirm={() => handleUseGlobal(row)}
-                  >
-                    <Button size="small">{t("productUnits.useGlobal")}</Button>
-                  </Popconfirm>
-                )}
-                <Popconfirm
-                  title={t("productUnits.setAsBaseConfirm")}
-                  description={t("productUnits.setAsBaseConfirmDescription")}
-                  onConfirm={() => handleSetBase(row)}
-                >
-                  <Button size="small">{t("productUnits.setAsBase")}</Button>
-                </Popconfirm>
-                <Popconfirm
-                  title={t("productUnits.removeConfirm")}
-                  onConfirm={() => handleDelete(row)}
-                >
-                  <Button size="small" danger>
-                    {t("common.remove")}
-                  </Button>
-                </Popconfirm>
-              </Space>
-            )
-          }
+          width={80}
+          align="center"
+          render={(_, row) => {
+            if (isBaseRow(row) || !canWrite) {
+              return null;
+            }
+
+            const actions: RowAction[] = [
+              {
+                key: "edit",
+                label: t("common.edit"),
+                icon: <EditOutlined />,
+                onClick: () => openEdit(row),
+              },
+            ];
+
+            if (canUseGlobal(row)) {
+              actions.push({
+                key: "global",
+                label: t("productUnits.useGlobal"),
+                icon: <GlobalOutlined />,
+                confirm: {
+                  title: t("productUnits.useGlobalConfirm"),
+                  description: t(
+                    "productUnits.useGlobalConfirmDescription",
+                  ),
+                  okText: t("productUnits.useGlobal"),
+                },
+                onClick: () => handleUseGlobal(row),
+              });
+            }
+
+            actions.push(
+              {
+                key: "base",
+                label: t("productUnits.setAsBase"),
+                icon: <StarOutlined />,
+                confirm: {
+                  title: t("productUnits.setAsBaseConfirm"),
+                  description: t("productUnits.setAsBaseConfirmDescription"),
+                  okText: t("productUnits.setAsBase"),
+                },
+                onClick: () => handleSetBase(row),
+              },
+              {
+                key: "remove",
+                label: t("common.remove"),
+                icon: <DeleteOutlined />,
+                danger: true,
+                dividerBefore: true,
+                confirm: {
+                  title: t("productUnits.removeConfirm"),
+                  okText: t("common.remove"),
+                },
+                onClick: () => handleDelete(row),
+              },
+            );
+
+            return (
+              <RowActions
+                actions={actions}
+                moreLabel={t("common.moreActions")}
+              />
+            );
+          }}
         />
       </Table>
 

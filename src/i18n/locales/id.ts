@@ -19,6 +19,7 @@ export const id: TranslationSchema = {
     created: "Dibuat",
     updated: "Diperbarui",
     actions: "Aksi",
+    moreActions: "Aksi lainnya",
     optional: "Opsional",
     select: "Pilih",
     logout: "Keluar",

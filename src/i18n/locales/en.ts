@@ -17,6 +17,7 @@ export const en = {
     created: "Created",
     updated: "Updated",
     actions: "Actions",
+    moreActions: "More actions",
     optional: "Optional",
     select: "Select",
     logout: "Logout",

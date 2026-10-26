@@ -44,7 +44,13 @@ export function ProductSoftDeleteButton({
       description={t("products.remove.confirmDescription")}
       onConfirm={confirmDelete}
     >
-      <Button danger type="text" size={size} icon={<DeleteOutlined />}>
+      <Button
+        danger
+        type="text"
+        size={size}
+        icon={<DeleteOutlined />}
+        title={hideText ? t("common.remove") : undefined}
+      >
         {!hideText && t("common.delete")}
       </Button>
     </Popconfirm>

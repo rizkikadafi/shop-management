@@ -3,10 +3,14 @@ import {
   EditButton,
   getDefaultSortOrder,
   List,
-  ShowButton,
   useTable,
 } from "@refinedev/antd";
-import { useList, type HttpError } from "@refinedev/core";
+import {
+  Link,
+  useList,
+  useNavigation,
+  type HttpError,
+} from "@refinedev/core";
 import { Space, Table, Tag } from "antd";
 import { useMemo } from "react";
 import { createColumnFilter } from "../../../components/columnFilterProps";
@@ -26,6 +30,7 @@ type ProductRow = Product & {
 
 export function ProductList() {
   const { t, formatCurrency } = useI18n();
+  const { showUrl } = useNavigation();
   const { tableProps, filters, setFilters, setCurrentPage, sorters } = useTable<
     Product,
     HttpError
@@ -90,24 +95,13 @@ export function ProductList() {
     >
       <Table {...tableProps} rowKey="id" scroll={{ x: "max-content" }}>
         <Table.Column
-          title={t("products.columns.actions")}
-          render={(_, record: ProductRow) => (
-            <Space>
-              <ShowButton hideText size="small" recordItemId={record.id} />
-              <EditButton hideText size="small" recordItemId={record.id} />
-              <ProductSoftDeleteButton
-                hideText
-                size="small"
-                recordItemId={record.id}
-              />
-            </Space>
-          )}
-        />
-        <Table.Column
           dataIndex="name"
           title={t("products.columns.name")}
           sorter
           sortOrder={getDefaultSortOrder("name", sorters)}
+          render={(value: string, record: ProductRow) => (
+            <Link to={showUrl("products", record.id)}>{value}</Link>
+          )}
           {...filterProps("name")}
         />
         <Table.Column
@@ -149,6 +143,27 @@ export function ProductList() {
             </Tag>
           )}
           {...filterProps("is_active")}
+        />
+        <Table.Column
+          title={t("products.columns.actions")}
+          width={80}
+          align="center"
+          fixed="right"
+          render={(_, record: ProductRow) => (
+            <Space size={2} wrap={false}>
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record.id}
+                title={t("common.edit")}
+              />
+              <ProductSoftDeleteButton
+                hideText
+                size="small"
+                recordItemId={record.id}
+              />
+            </Space>
+          )}
         />
       </Table>
     </List>
