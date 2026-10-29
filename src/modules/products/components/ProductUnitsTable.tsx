@@ -12,6 +12,7 @@ type ProductUomRow = ProductUom & {
   uom?: {
     name?: string | null;
     symbol?: string | null;
+    uom_type?: string | null;
   } | null;
 };
 
@@ -37,7 +38,7 @@ export function ProductUnitsTable({
     pagination: { pageSize: 1000 },
     meta: {
       select:
-        "id, product_id, uom_id, parent_product_uom_id, quantity_in_parent, conversion_mode, created_at, updated_at, uom:uom_id(name, symbol)",
+        "id, product_id, uom_id, parent_product_uom_id, quantity_in_parent, conversion_mode, created_at, updated_at, uom:uom_id(name, symbol, uom_type)",
     },
   });
 
@@ -98,12 +99,22 @@ export function ProductUnitsTable({
         filters={unitFilters}
         filterSearch
         onFilter={(value, row) => row.uom_id === value}
-        render={(_, row) => (
-          <Space>
-            {row.uom ? `${row.uom.name} (${row.uom.symbol ?? ""})` : row.uom_id}
-            {isBase(row) && <Tag color="green">{t("productUnits.base")}</Tag>}
-          </Space>
-        )}
+        render={(_, row) => {
+          const isCrossType =
+            !isBase(row) &&
+            Boolean(row.uom?.uom_type) &&
+            Boolean(baseRow?.uom?.uom_type) &&
+            row.uom?.uom_type !== baseRow?.uom?.uom_type;
+          return (
+            <Space>
+              {row.uom ? `${row.uom.name} (${row.uom.symbol ?? ""})` : row.uom_id}
+              {isBase(row) && <Tag color="green">{t("productUnits.base")}</Tag>}
+              {isCrossType && (
+                <Tag color="purple">{t("productUnits.nominal")}</Tag>
+              )}
+            </Space>
+          );
+        }}
       />
       <Table.Column<ProductUomRow>
         title={t("productUnits.source")}

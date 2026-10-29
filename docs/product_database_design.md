@@ -219,14 +219,15 @@ For this example, `quantity_in_parent` means the number of parent units represen
 - If a global conversion is unavailable (for example, the product uses a different global root), a `global` row falls back to its stored local tree so the product remains usable. The UI shows the effective source.
 - Switching a row to local prefills the current global factor, so the user only adjusts the value that differs. A "Use global" action restores inheritance.
 
-Enforced rules (see `20261014120000_product_uom_tree_integrity.sql` and `20261026120000_global_uom_conversions.sql`):
+Enforced rules (see `20261014120000_product_uom_tree_integrity.sql`, `20261026120000_global_uom_conversions.sql`, and `20261029100000_allow_product_cross_type_uoms.sql`):
 
 - A product has exactly one parentless row per `product_uoms` tree, and it must be the row for `products.base_uom_id` with `quantity_in_parent = 1`. This is checked by a deferred constraint trigger at commit time.
 - Every non-base UoM therefore has a parent.
 - A UoM cannot be its own ancestor, directly or indirectly (cycle guard trigger).
-- A parent's UoM and child's UoM must share the same `uoms.uom_type` (measurement family).
+- Global conversions (`uoms` table) strictly require parent and child to share the same `uoms.uom_type` (measurement family).
+- Product-specific local conversions (`product_uoms` with `conversion_mode = 'local'`) may span measurement families to support cross-type items (e.g., eggs where $1\text{ pc} = 0.0625\text{ kg}$). These represent nominal/average ratios, while periodic inventory stocktakes absorb natural physical weight variances.
 - A product must not have duplicate UoM definitions (unique `(product_id, uom_id)`).
-- Global parents use the same family and cycle rules; the parent and quantity are both null (root) or both set.
+- Global parents on `uoms` use the same family and cycle rules; the parent and quantity are both null (root) or both set.
 
 Changing `products.base_uom_id` to a unit that is already part of the product re-roots the tree: the path from the new base up to the old root is reversed and each factor inverted, so relative conversions and existing price rules are preserved. Changing the base to an unrelated unit is rejected while the product still has other units or price rules; add the desired base as a unit first, then promote it.
 

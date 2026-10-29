@@ -379,6 +379,63 @@ check(
   [48, "pack"],
 );
 
+const crossTypeEggRows = [
+  {
+    id: "kg",
+    uom_id: "uom-kg",
+    parent_product_uom_id: null,
+    quantity_in_parent: 1,
+    conversion_mode: "local" as const,
+  },
+  {
+    id: "pc",
+    uom_id: "uom-pcs",
+    parent_product_uom_id: "kg",
+    quantity_in_parent: 0.0625, // 1 pc = 0.0625 kg (16 eggs / kg)
+    conversion_mode: "local" as const,
+  },
+  {
+    id: "tray",
+    uom_id: "uom-tray",
+    parent_product_uom_id: "pc",
+    quantity_in_parent: 30, // 1 tray = 30 pcs = 1.875 kg
+    conversion_mode: "local" as const,
+  },
+  {
+    id: "g",
+    uom_id: "uom-g",
+    parent_product_uom_id: "kg",
+    quantity_in_parent: 0.001,
+    conversion_mode: "global" as const,
+  },
+];
+const eggFactors = factorToBaseMap(crossTypeEggRows, globalFactors);
+check(
+  "cross-type local conversions resolve accurately to base",
+  [
+    eggFactors.get("kg"),
+    eggFactors.get("pc"),
+    eggFactors.get("tray"),
+    eggFactors.get("g"),
+  ],
+  [1, 0.0625, 1.875, 0.001],
+);
+
+const eggPrices = derivePurchasePrices(
+  crossTypeEggRows,
+  new Map([["kg", 28000]]),
+  globalFactors,
+);
+check(
+  "cross-type purchase prices derive accurately",
+  [
+    eggPrices.get("kg")?.price,
+    eggPrices.get("pc")?.price,
+    eggPrices.get("tray")?.price,
+  ],
+  [28000, 1750, 52500],
+);
+
 // --- network timeout helper ------------------------------------------------
 const resolved = await withTimeout(Promise.resolve("ok"), 1000);
 check("withTimeout resolves before deadline", resolved, "ok");

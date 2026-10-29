@@ -173,7 +173,10 @@ export const en = {
     baseChanged: "Base unit updated",
     baseChangedDescription: "The base unit was changed and conversions recalculated.",
     parentHint:
-      "Only units in the same measurement family can be parents.",
+      "Units can be within the same family or cross-family (nominal conversion).",
+    nominal: "Nominal",
+    crossTypeHint:
+      "Conversions across measurement families (e.g. count to weight) are nominal averages.",
     factorDirection: "Entry mode",
     factorModeUnitToParent: "1 unit = X parent",
     factorModeParentToUnit: "X units = 1 parent",

@@ -177,7 +177,10 @@ export const id: TranslationSchema = {
     baseChangedDescription:
       "Satuan dasar diubah dan konversi dihitung ulang.",
     parentHint:
-      "Hanya satuan dengan jenis ukuran yang sama dapat menjadi induk.",
+      "Satuan dapat berada dalam jenis yang sama atau lintas jenis (konversi nominal).",
+    nominal: "Nominal",
+    crossTypeHint:
+      "Konversi lintas jenis pengukuran (mis. butir ke kg) merupakan rata-rata nominal.",
     factorDirection: "Mode input",
     factorModeUnitToParent: "1 satuan = X induk",
     factorModeParentToUnit: "X satuan = 1 induk",

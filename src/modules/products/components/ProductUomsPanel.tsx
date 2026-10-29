@@ -29,7 +29,7 @@ import { useMemo, useState } from "react";
 import { RowActions, type RowAction } from "../../../components/RowActions";
 import { useI18n } from "../../../i18n/useI18n";
 import type { Database } from "../../../data/remote/database.types";
-import type { Uom, UomType } from "../../uoms/uom.schema";
+import type { Uom } from "../../uoms/uom.schema";
 import type { GlobalFactorMap } from "../../uoms/uomGlobalConversion";
 import { useUomGlobalFactors } from "../../uoms/useUomGlobalFactors";
 import {
@@ -149,18 +149,10 @@ function UnitFormModal({
   );
 
   const availableUomOptions = useMemo(() => {
-    const baseType = baseUom?.uom_type;
-    const options = uomRecords
-      .filter(
-        (uom) =>
-          !baseType ||
-          uom.uom_type === baseType ||
-          editing?.uom_id === uom.id,
-      )
-      .map((uom) => ({
-        value: uom.id,
-        label: `${uom.name} (${uom.symbol})`,
-      }));
+    const options = uomRecords.map((uom) => ({
+      value: uom.id,
+      label: `${uom.name} (${uom.symbol})`,
+    }));
     return editing
       ? options.filter(
         (option) =>
@@ -168,13 +160,10 @@ function UnitFormModal({
           !assignedUomIds.has(option.value),
       )
       : options.filter((option) => !assignedUomIds.has(option.value));
-  }, [uomRecords, editing, assignedUomIds, baseUom?.uom_type]);
+  }, [uomRecords, editing, assignedUomIds]);
 
   const parentOptions = useMemo(() => {
     const blocked = editing ? descendantIds(rows, editing.id) : new Set<string>();
-    const selectedType = selectedUomId
-      ? (uomById.get(selectedUomId)?.uom_type as UomType | undefined)
-      : undefined;
 
     return rows
       .filter((row) => {
@@ -185,17 +174,13 @@ function UnitFormModal({
         if (blocked.has(row.id)) {
           return false;
         }
-        // Conversions only make sense within one measurement family.
-        if (selectedType && uomById.get(row.uom_id)?.uom_type !== selectedType) {
-          return false;
-        }
         return true;
       })
       .map((row) => ({
         value: row.id,
         label: row.uom ? `${row.uom.name} (${row.uom.symbol ?? ""})` : row.id,
       }));
-  }, [rows, editing, selectedUomId, uomById]);
+  }, [rows, editing]);
 
   const handleDirectionChange = (next: FactorDirection) => {
     if (next === factorDirection) {
@@ -280,6 +265,11 @@ function UnitFormModal({
     });
   };
 
+  const isCrossTypeSelection =
+    Boolean(selectedUom?.uom_type) &&
+    Boolean(baseUom?.uom_type) &&
+    selectedUom?.uom_type !== baseUom?.uom_type;
+
   const unitSymbol =
     (selectedUomId ? uomById.get(selectedUomId)?.symbol : undefined) ??
     t("productUnits.unit");
@@ -330,16 +320,6 @@ function UnitFormModal({
               setSelectedUomId(value);
               const nextFactor = globalFactors.factorToBase(value, baseUomId);
               setConversionMode(nextFactor !== null ? "global" : "local");
-              // Drop a parent that no longer matches the new unit's family.
-              const nextType = uomById.get(value)?.uom_type;
-              if (
-                selectedParentId &&
-                uomById.get(rowsById.get(selectedParentId)?.uom_id ?? "")
-                  ?.uom_type !== nextType
-              ) {
-                setSelectedParentId(null);
-                form.setFieldsValue({ parent_product_uom_id: null });
-              }
             }}
           />
         </Form.Item>
@@ -392,6 +372,12 @@ function UnitFormModal({
                 }
               />
             </Form.Item>
+            {isCrossTypeSelection && (
+              <Typography.Paragraph type="secondary" style={{ marginTop: -8, marginBottom: 16 }}>
+                <Tag color="purple">{t("productUnits.nominal")}</Tag>{" "}
+                {t("productUnits.crossTypeHint")}
+              </Typography.Paragraph>
+            )}
             <Form.Item label={t("productUnits.factorDirection")}>
               <Segmented<FactorDirection>
                 value={factorDirection}
@@ -665,14 +651,24 @@ export function ProductUomsPanel({
       >
         <Table.Column<ProductUomRow>
           title={t("productUnits.unit")}
-          render={(_, row) => (
-            <Space>
-              {row.uom ? `${row.uom.name} (${row.uom.symbol ?? ""})` : row.uom_id}
-              {isBaseRow(row) && (
-                <Tag color="green">{t("productUnits.base")}</Tag>
-              )}
-            </Space>
-          )}
+          render={(_, row) => {
+            const isCrossType =
+              !isBaseRow(row) &&
+              Boolean(row.uom?.uom_type) &&
+              Boolean(baseRow?.uom?.uom_type) &&
+              row.uom?.uom_type !== baseRow?.uom?.uom_type;
+            return (
+              <Space>
+                {row.uom ? `${row.uom.name} (${row.uom.symbol ?? ""})` : row.uom_id}
+                {isBaseRow(row) && (
+                  <Tag color="green">{t("productUnits.base")}</Tag>
+                )}
+                {isCrossType && (
+                  <Tag color="purple">{t("productUnits.nominal")}</Tag>
+                )}
+              </Space>
+            );
+          }}
         />
         <Table.Column<ProductUomRow>
           title={t("productUnits.source")}
